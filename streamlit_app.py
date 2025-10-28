@@ -363,9 +363,47 @@ def main():
                             st.caption("PDF не прикреплён")
 
                     st.divider()
-                    st.markdown("**Редактировать**")
-                    with st.form(f"edit_{emp_id}"):
-                        vals = employee_form({
+                    # Edit block: only admins may edit/delete. Viewers see read-only fields.
+                    if st.session_state.get("role") == "admin":
+                        st.markdown("**Редактировать**")
+                        with st.form(f"edit_{emp_id}"):
+                            vals = employee_form({
+                                "rakami_tabel": rakami_tabel,
+                                "last_name": last_name,
+                                "first_name": first_name,
+                                "nasab": nasab,
+                                "makon": makon,
+                                "sanai_kabul": sanai_kabul,
+                                "vazifa": vazifa,
+                                "phone": phone,
+                                "dog_no": dog_no,
+                                "pdf_file": pdf_file or "",
+                                "photo_file": photo_file or "",
+                            }, disabled=False)
+                            save = st.form_submit_button("Сохранить изменения")
+                        cols_btn = st.columns(2)
+                        if save:
+                            new_tabel = vals[0].strip()
+                            if not new_tabel:
+                                st.error("Табельный № обязателен")
+                                st.stop()
+                            if tabel_exists(new_tabel, exclude_id=emp_id):
+                                st.error("Такой Табельный № уже существует")
+                                st.stop()
+                            update_employee(emp_id, (
+                                new_tabel, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9] or "", vals[10] or ""
+                            ))
+                            st.success("Сохранено")
+                            st.rerun()
+                        with cols_btn[1]:
+                            if st.button("Удалить", type="primary", key=f"del_{emp_id}"):
+                                delete_employee(emp_id)
+                                st.warning("Удалено")
+                                st.rerun()
+                    else:
+                        st.markdown("**Информация (только для чтения)**")
+                        # render the same fields but disabled so user can view values
+                        employee_form({
                             "rakami_tabel": rakami_tabel,
                             "last_name": last_name,
                             "first_name": first_name,
@@ -377,27 +415,8 @@ def main():
                             "dog_no": dog_no,
                             "pdf_file": pdf_file or "",
                             "photo_file": photo_file or "",
-                        })
-                        save = st.form_submit_button("Сохранить изменения")
-                    cols_btn = st.columns(2)
-                    if save:
-                        new_tabel = vals[0].strip()
-                        if not new_tabel:
-                            st.error("Табельный № обязателен")
-                            st.stop()
-                        if tabel_exists(new_tabel, exclude_id=emp_id):
-                            st.error("Такой Табельный № уже существует")
-                            st.stop()
-                        update_employee(emp_id, (
-                            new_tabel, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9] or "", vals[10] or ""
-                        ))
-                        st.success("Сохранено")
-                        st.rerun()
-                    with cols_btn[1]:
-                        if st.button("Удалить", type="primary", key=f"del_{emp_id}"):
-                            delete_employee(emp_id)
-                            st.warning("Удалено")
-                            st.rerun()
+                        }, disabled=True)
+                        st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
 
 
 if __name__ == "__main__":
