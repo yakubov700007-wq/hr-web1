@@ -2,6 +2,7 @@ import os
 import re
 import sqlite3
 from datetime import datetime
+import subprocess
 from io import BytesIO
 
 import streamlit as st
@@ -15,6 +16,33 @@ PHOTOS_DIR = os.path.join(DATA_DIR, "photos")
 PDFS_DIR = os.path.join(DATA_DIR, "pdfs")
 os.makedirs(PHOTOS_DIR, exist_ok=True)
 os.makedirs(PDFS_DIR, exist_ok=True)
+
+
+def init_db():
+    """Create the employees database and table if they don't exist."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS employees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rakami_tabel TEXT UNIQUE,
+            last_name TEXT,
+            first_name TEXT,
+            nasab TEXT,
+            makon TEXT,
+            sanai_kabul TEXT,
+            vazifa TEXT,
+            phone TEXT,
+            dog_no TEXT,
+            pdf_file TEXT,
+            photo_file TEXT
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
 
 APP_PASSWORD = os.getenv("HR_APP_PASSWORD", "1234")
 
@@ -108,7 +136,24 @@ def safe_write_file(target_dir: str, filename_hint: str, data: bytes) -> str:
         i += 1
     with open(target, "wb") as f:
         f.write(data)
-    return target
+    # return relative path from project BASE_DIR for portability
+    try:
+        rel = os.path.relpath(target, BASE_DIR)
+    except Exception:
+        rel = target
+    return rel
+
+
+def get_abs_path(path_or_rel: str) -> str:
+    """Return absolute path for a stored path (which may be relative to BASE_DIR).
+
+    Returns empty string if input is falsy.
+    """
+    if not path_or_rel:
+        return ""
+    if os.path.isabs(path_or_rel):
+        return path_or_rel
+    return os.path.join(BASE_DIR, path_or_rel)
 
 
 # --- Auth ---
@@ -152,12 +197,45 @@ def employee_form(defaults=None):
 
 
 def main():
+    # Ensure DB and data folders exist before any DB operations
+    init_db()
+
     require_auth()
 
     st.set_page_config(page_title="Сотрудники ПБК", layout="wide")
     st.title("Сотрудники ПБК")
 
-    # Sidebar filters/actions
+    # show deployed version (git short sha) to help verify Cloud deploys
+    def get_short_sha():
+        try:
+            out = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL)
+            return out.decode().strip()
+        except Exception:
+            return None
+
+    sha = get_short_sha()
+    if sha:
+        st.caption(f"Версия: {sha}")
+    else:
+        st.caption(f"Версия: (неизвестна) — локально: {datetime.utcnow().isoformat()}Z")
+
+    # --- Navigation: simple main menu ---
+    if "page" not in st.session_state:
+        st.session_state.page = "Главная"
+
+    st.sidebar.title("Меню")
+    page = st.sidebar.radio("", ["Главная", "Сотрудники"], index=0 if st.session_state.page == "Главная" else 1, key="page")
+
+    if page == "Главная":
+        st.header("Главное меню")
+        st.write("Вы вошли в систему. Используйте меню слева, чтобы перейти в разделы.")
+        if st.button("Перейти к сотрудникам"):
+            st.session_state.page = "Сотрудники"
+            st.experimental_rerun()
+        return
+
+    # If we are here — page == 'Сотрудники'
+    # Sidebar filters/actions for employees
     st.sidebar.header("Фильтр")
     region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
     search = st.sidebar.text_input("Поиск")
