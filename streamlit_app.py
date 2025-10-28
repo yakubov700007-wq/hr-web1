@@ -39,7 +39,7 @@ def fetch_employees(search="", region="Все"):
         params.extend([like, like, like, like, like])
     if where:
         sql += " WHERE " + " AND ".join(where)
-    sql += " ORDER BY last_name, first_name"
+    sql += " ORDER BY rakami_tabel ASC"  # <-- сортировка по табельному №
     c.execute(sql, params)
     rows = c.fetchall()
     conn.close()
