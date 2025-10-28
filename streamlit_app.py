@@ -46,7 +46,8 @@ def init_db():
 
 # Authentication: two levels
 # Admin password(s) (can add/edit/delete). Supports comma-separated list in env.
-ADMIN_PASSWORD = os.getenv("HR_APP_PASSWORD", "1234")
+# По умолчанию изменён на 4321 — можно переопределить через секреты/переменные окружения
+ADMIN_PASSWORD = os.getenv("HR_APP_PASSWORD", "4321")
 ADMIN_PASSWORDS = [p.strip() for p in ADMIN_PASSWORD.split(",") if p.strip()]
 # Viewer/read-only password(s). Supports comma-separated list in env.
 VIEWER_PASSWORD = os.getenv("HR_VIEWER_PASSWORD", "123456789")
