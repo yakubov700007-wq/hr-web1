@@ -266,6 +266,15 @@ def main():
         st.session_state.page = "Главная"
 
     st.sidebar.title("Меню")
+    # show current role and logout in sidebar for visibility
+    if st.session_state.get("authed"):
+        role = st.session_state.get("role", "?")
+        st.sidebar.markdown(f"**Роль:** {role}")
+        if st.sidebar.button("Выход", key="logout_sidebar"):
+            for k in ["authed", "role", "page"]:
+                if k in st.session_state:
+                    del st.session_state[k]
+            st.experimental_rerun()
     page = st.sidebar.radio("", ["Главная", "Сотрудники"], index=0 if st.session_state.page == "Главная" else 1, key="page")
 
     if page == "Главная":
