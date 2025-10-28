@@ -8,6 +8,15 @@ from io import BytesIO
 import streamlit as st
 from PIL import Image
 
+# Helper: safe rerun that falls back to st.stop() if experimental_rerun is unavailable
+def safe_rerun():
+    try:
+        st.experimental_rerun()
+    except Exception:
+        # If experimental_rerun isn't available in this Streamlit build, stop script
+        # The session_state changes already took effect so user will see login on next interaction
+        st.stop()
+
 # --- Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -181,13 +190,13 @@ def require_auth():
             st.session_state.authed = True
             st.session_state.role = "admin"
             st.success("Вход выполнен: администратор")
-            st.rerun()
+            safe_rerun()
         elif p in VIEWER_PASSWORDS:
             st.session_state.authed = True
             st.session_state.role = "viewer"
             st.session_state.page = "Сотрудники"
             st.success("Вход выполнен: только просмотр")
-            st.rerun()
+            safe_rerun()
         else:
             st.error("Неверный пароль")
     st.stop()
@@ -259,7 +268,7 @@ def main():
                 for k in ["authed", "role", "page"]:
                     if k in st.session_state:
                         del st.session_state[k]
-                st.experimental_rerun()
+                    safe_rerun()
 
     # --- Navigation: simple main menu ---
     if "page" not in st.session_state:
@@ -294,7 +303,7 @@ def main():
             for k in ["authed", "role", "page"]:
                 if k in st.session_state:
                     del st.session_state[k]
-            st.experimental_rerun()
+            safe_rerun()
     page = st.sidebar.radio("", ["Главная", "Сотрудники"], index=0 if st.session_state.page == "Главная" else 1, key="page")
 
     if page == "Главная":
@@ -347,7 +356,7 @@ def main():
                 pdf_path or "", photo_path or ""
             ))
             st.success("Добавлено")
-            st.rerun()
+            safe_rerun()
     else:
         rows = fetch_employees(search=search, region=region)
         st.caption(f"Найдено: {len(rows)}")
@@ -380,7 +389,7 @@ def main():
                                 pdf_file or "", new_path
                             ))
                             st.success("Фото обновлено")
-                            st.rerun()
+                            safe_rerun()
 
                         up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {rakami_tabel}", type=["pdf"], key=f"pdf_{emp_id}")
                         if up_new_pdf is not None:
@@ -390,7 +399,7 @@ def main():
                                 new_pdf, photo_file or ""
                             ))
                             st.success("PDF обновлён")
-                            st.rerun()
+                            safe_rerun()
                     else:
                         st.caption("Только просмотр — загрузка файлов недоступна")
 
@@ -442,12 +451,12 @@ def main():
                                 new_tabel, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9] or "", vals[10] or ""
                             ))
                             st.success("Сохранено")
-                            st.rerun()
+                            safe_rerun()
                         with cols_btn[1]:
                             if st.button("Удалить", type="primary", key=f"del_{emp_id}"):
                                 delete_employee(emp_id)
                                 st.warning("Удалено")
-                                st.rerun()
+                                safe_rerun()
                     else:
                         st.markdown("**Информация (только для чтения)**")
                         # render the same fields but disabled so user can view values
