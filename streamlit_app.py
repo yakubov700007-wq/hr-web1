@@ -281,7 +281,7 @@ def main():
     if add_mode:
         st.subheader("Добавить сотрудника")
         with st.form("add_form"):
-            vals = employee_form()
+            vals = employee_form(key_prefix="add")
             uploaded_photo = st.file_uploader("Фото (необязательно)", type=["jpg", "jpeg", "png"], accept_multiple_files=False)
             uploaded_pdf = st.file_uploader("PDF (необязательно)", type=["pdf"], accept_multiple_files=False)
             submitted = st.form_submit_button("Сохранить")
@@ -363,8 +363,9 @@ def main():
                     with info_cols[1]:
                         st.text(f"Должность: {vazifa}")
                         st.text(f"Дог №: {dog_no}")
-                        if pdf_file and os.path.isfile(pdf_file):
-                            st.download_button("Скачать PDF", data=open(pdf_file, "rb").read(), file_name=os.path.basename(pdf_file), key=f"dl_{emp_id}")
+                        abs_pdf = get_abs_path(pdf_file)
+                        if pdf_file and os.path.isfile(abs_pdf):
+                            st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
                         else:
                             st.caption("PDF не прикреплён")
 
@@ -385,7 +386,7 @@ def main():
                                 "dog_no": dog_no,
                                 "pdf_file": pdf_file or "",
                                 "photo_file": photo_file or "",
-                            }, disabled=False)
+                            }, disabled=False, key_prefix=f"emp_{emp_id}")
                             save = st.form_submit_button("Сохранить изменения")
                         cols_btn = st.columns(2)
                         if save:
@@ -421,7 +422,7 @@ def main():
                             "dog_no": dog_no,
                             "pdf_file": pdf_file or "",
                             "photo_file": photo_file or "",
-                        }, disabled=True)
+                        }, disabled=True, key_prefix=f"view_{emp_id}")
                         st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
 
 
