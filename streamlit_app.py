@@ -44,7 +44,13 @@ def init_db():
     conn.commit()
     conn.close()
 
-APP_PASSWORD = os.getenv("HR_APP_PASSWORD", "1234")
+# Authentication: two levels
+# Admin password(s) (can add/edit/delete). Supports comma-separated list in env.
+ADMIN_PASSWORD = os.getenv("HR_APP_PASSWORD", "1234")
+ADMIN_PASSWORDS = [p.strip() for p in ADMIN_PASSWORD.split(",") if p.strip()]
+# Viewer/read-only password(s). Supports comma-separated list in env.
+VIEWER_PASSWORD = os.getenv("HR_VIEWER_PASSWORD", "123456789")
+VIEWER_PASSWORDS = [p.strip() for p in VIEWER_PASSWORD.split(",") if p.strip()]
 
 # --- DB helpers ---
 
@@ -159,15 +165,26 @@ def get_abs_path(path_or_rel: str) -> str:
 # --- Auth ---
 
 def require_auth():
+    """Authenticate user and set role in session_state: 'admin' or 'viewer'."""
     if "authed" not in st.session_state:
         st.session_state.authed = False
+        st.session_state.role = None
     if st.session_state.authed:
         return True
+
     st.title("Вход")
     pwd = st.text_input("Пароль", type="password")
     if st.button("Войти"):
-        if pwd == APP_PASSWORD:
+        p = (pwd or "").strip()
+        if p in ADMIN_PASSWORDS:
             st.session_state.authed = True
+            st.session_state.role = "admin"
+            st.success("Вход выполнен: администратор")
+            st.rerun()
+        elif p in VIEWER_PASSWORDS:
+            st.session_state.authed = True
+            st.session_state.role = "viewer"
+            st.success("Вход выполнен: только просмотр")
             st.rerun()
         else:
             st.error("Неверный пароль")
@@ -176,20 +193,27 @@ def require_auth():
 
 # --- UI ---
 
-def employee_form(defaults=None):
+def employee_form(defaults=None, disabled: bool = False):
+    """Render employee form inputs. If disabled=True inputs are readonly/disabled.
+
+    Returns tuple of values in same order as before.
+    """
     defaults = defaults or {}
     cols = st.columns(2)
     with cols[0]:
-        rakami_tabel = st.text_input("Табельный №", value=defaults.get("rakami_tabel", ""))
-        last_name = st.text_input("Фамилия", value=defaults.get("last_name", ""))
-        first_name = st.text_input("Имя", value=defaults.get("first_name", ""))
-        nasab = st.text_input("Отчество", value=defaults.get("nasab", ""))
-        makon = st.selectbox("Регион", ["РРП", "ВМКБ", "РУХО", "РУСО"], index=0 if defaults.get("makon") not in ["РРП","ВМКБ","РУХО","РУСО"] else ["РРП","ВМКБ","РУХО","РУСО"].index(defaults.get("makon")))
-        sanai_kabul = st.text_input("Дата приёма", value=defaults.get("sanai_kabul", ""))
+        rakami_tabel = st.text_input("Табельный №", value=defaults.get("rakami_tabel", ""), disabled=disabled)
+        last_name = st.text_input("Фамилия", value=defaults.get("last_name", ""), disabled=disabled)
+        first_name = st.text_input("Имя", value=defaults.get("first_name", ""), disabled=disabled)
+        nasab = st.text_input("Отчество", value=defaults.get("nasab", ""), disabled=disabled)
+        regions = ["РРП", "ВМКБ", "РУХО", "РУСО"]
+        default_makon = defaults.get("makon")
+        idx = 0 if default_makon not in regions else regions.index(default_makon)
+        makon = st.selectbox("Регион", regions, index=idx, disabled=disabled)
+        sanai_kabul = st.text_input("Дата приёма", value=defaults.get("sanai_kabul", ""), disabled=disabled)
     with cols[1]:
-        vazifa = st.text_input("Должность", value=defaults.get("vazifa", ""))
-        phone = st.text_input("Телефон", value=defaults.get("phone", ""))
-        dog_no = st.text_input("Дог №", value=defaults.get("dog_no", ""))
+        vazifa = st.text_input("Должность", value=defaults.get("vazifa", ""), disabled=disabled)
+        phone = st.text_input("Телефон", value=defaults.get("phone", ""), disabled=disabled)
+        dog_no = st.text_input("Дог №", value=defaults.get("dog_no", ""), disabled=disabled)
         pdf_file = defaults.get("pdf_file", "")
         photo_file = defaults.get("photo_file", "")
         st.write("")
@@ -240,7 +264,12 @@ def main():
     region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
     search = st.sidebar.text_input("Поиск")
     st.sidebar.divider()
-    add_mode = st.sidebar.toggle("Добавить нового сотрудника", value=False)
+    # only admins can add
+    if st.session_state.get("role") == "admin":
+        add_mode = st.sidebar.toggle("Добавить нового сотрудника", value=False)
+    else:
+        add_mode = False
+        st.sidebar.caption("Режим: только просмотр")
 
     # Data table or add form
     if add_mode:
@@ -284,32 +313,39 @@ def main():
             with st.expander(f"{last_name} {first_name} — {rakami_tabel}", expanded=False):
                 cols_top = st.columns([1,2])
                 with cols_top[0]:
-                    if photo_file and os.path.isfile(photo_file):
+                    # display photo if present
+                    abs_photo = get_abs_path(photo_file)
+                    if photo_file and os.path.isfile(abs_photo):
                         try:
-                            st.image(Image.open(photo_file), width=220)
+                            st.image(Image.open(abs_photo), width=220)
                         except Exception:
                             st.info("Нет фото")
                     else:
                         st.info("Нет фото")
-                    up_new_photo = st.file_uploader(f"Заменить фото для {rakami_tabel}", type=["jpg","jpeg","png"], key=f"photo_{emp_id}")
-                    if up_new_photo is not None:
-                        new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
-                        update_employee(emp_id, (
-                            rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
-                            pdf_file or "", new_path
-                        ))
-                        st.success("Фото обновлено")
-                        st.rerun()
 
-                    up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {rakami_tabel}", type=["pdf"], key=f"pdf_{emp_id}")
-                    if up_new_pdf is not None:
-                        new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
-                        update_employee(emp_id, (
-                            rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
-                            new_pdf, photo_file or ""
-                        ))
-                        st.success("PDF обновлён")
-                        st.rerun()
+                    # only admins can upload/replace files
+                    if st.session_state.get("role") == "admin":
+                        up_new_photo = st.file_uploader(f"Заменить фото для {rakami_tabel}", type=["jpg","jpeg","png"], key=f"photo_{emp_id}")
+                        if up_new_photo is not None:
+                            new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
+                            update_employee(emp_id, (
+                                rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
+                                pdf_file or "", new_path
+                            ))
+                            st.success("Фото обновлено")
+                            st.rerun()
+
+                        up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {rakami_tabel}", type=["pdf"], key=f"pdf_{emp_id}")
+                        if up_new_pdf is not None:
+                            new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
+                            update_employee(emp_id, (
+                                rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
+                                new_pdf, photo_file or ""
+                            ))
+                            st.success("PDF обновлён")
+                            st.rerun()
+                    else:
+                        st.caption("Только просмотр — загрузка файлов недоступна")
 
                 with cols_top[1]:
                     st.markdown("**Информация**")
