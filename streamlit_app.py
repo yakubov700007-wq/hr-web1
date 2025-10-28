@@ -184,6 +184,7 @@ def require_auth():
         elif p in VIEWER_PASSWORDS:
             st.session_state.authed = True
             st.session_state.role = "viewer"
+            st.session_state.page = "Сотрудники"
             st.success("Вход выполнен: только просмотр")
             st.rerun()
         else:
@@ -193,27 +194,32 @@ def require_auth():
 
 # --- UI ---
 
-def employee_form(defaults=None, disabled: bool = False):
+def employee_form(defaults=None, disabled: bool = False, key_prefix: str | None = None):
     """Render employee form inputs. If disabled=True inputs are readonly/disabled.
+
+    key_prefix: optional string used to create unique widget keys when the form
+    is rendered multiple times (for example per-employee edit forms). If None,
+    a default prefix 'g' is used.
 
     Returns tuple of values in same order as before.
     """
     defaults = defaults or {}
+    kp = (key_prefix or "g").strip()
     cols = st.columns(2)
     with cols[0]:
-        rakami_tabel = st.text_input("Табельный №", value=defaults.get("rakami_tabel", ""), disabled=disabled)
-        last_name = st.text_input("Фамилия", value=defaults.get("last_name", ""), disabled=disabled)
-        first_name = st.text_input("Имя", value=defaults.get("first_name", ""), disabled=disabled)
-        nasab = st.text_input("Отчество", value=defaults.get("nasab", ""), disabled=disabled)
+        rakami_tabel = st.text_input("Табельный №", value=defaults.get("rakami_tabel", ""), disabled=disabled, key=f"{kp}_rakami_tabel")
+        last_name = st.text_input("Фамилия", value=defaults.get("last_name", ""), disabled=disabled, key=f"{kp}_last_name")
+        first_name = st.text_input("Имя", value=defaults.get("first_name", ""), disabled=disabled, key=f"{kp}_first_name")
+        nasab = st.text_input("Отчество", value=defaults.get("nasab", ""), disabled=disabled, key=f"{kp}_nasab")
         regions = ["РРП", "ВМКБ", "РУХО", "РУСО"]
         default_makon = defaults.get("makon")
         idx = 0 if default_makon not in regions else regions.index(default_makon)
-        makon = st.selectbox("Регион", regions, index=idx, disabled=disabled)
-        sanai_kabul = st.text_input("Дата приёма", value=defaults.get("sanai_kabul", ""), disabled=disabled)
+        makon = st.selectbox("Регион", regions, index=idx, disabled=disabled, key=f"{kp}_makon")
+        sanai_kabul = st.text_input("Дата приёма", value=defaults.get("sanai_kabul", ""), disabled=disabled, key=f"{kp}_sanai_kabul")
     with cols[1]:
-        vazifa = st.text_input("Должность", value=defaults.get("vazifa", ""), disabled=disabled)
-        phone = st.text_input("Телефон", value=defaults.get("phone", ""), disabled=disabled)
-        dog_no = st.text_input("Дог №", value=defaults.get("dog_no", ""), disabled=disabled)
+        vazifa = st.text_input("Должность", value=defaults.get("vazifa", ""), disabled=disabled, key=f"{kp}_vazifa")
+        phone = st.text_input("Телефон", value=defaults.get("phone", ""), disabled=disabled, key=f"{kp}_phone")
+        dog_no = st.text_input("Дог №", value=defaults.get("dog_no", ""), disabled=disabled, key=f"{kp}_dog_no")
         pdf_file = defaults.get("pdf_file", "")
         photo_file = defaults.get("photo_file", "")
         st.write("")
