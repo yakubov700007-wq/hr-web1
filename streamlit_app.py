@@ -279,25 +279,6 @@ def main():
     if st.session_state.get("authed"):
         role = st.session_state.get("role", "?")
         st.sidebar.markdown(f"**Роль:** {role}")
-        # Clear cache button (placed above logout as requested)
-        if st.sidebar.button("Очистить кэш", key="clear_cache"):
-            cleared = []
-            try:
-                # new API (if available)
-                import streamlit as _st
-                try:
-                    _st.experimental_memo.clear()
-                    cleared.append('memo')
-                except Exception:
-                    pass
-                try:
-                    _st.experimental_singleton.clear()
-                    cleared.append('singleton')
-                except Exception:
-                    pass
-            except Exception:
-                pass
-            st.success(f"Кэш очищен: {', '.join(cleared) if cleared else 'ничего не очищено'}")
 
         if st.sidebar.button("Выход", key="logout_sidebar"):
             for k in ["authed", "role", "page"]:
