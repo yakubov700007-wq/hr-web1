@@ -250,6 +250,17 @@ def main():
     else:
         st.caption(f"Версия: (неизвестна) — локально: {datetime.utcnow().isoformat()}Z")
 
+    # Top-right logout button (visible when authenticated)
+    if st.session_state.get("authed"):
+        cols_top = st.columns([9, 1])
+        with cols_top[1]:
+            if st.button("Выход", key="logout"):
+                # clear auth-related session keys and go to login
+                for k in ["authed", "role", "page"]:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.experimental_rerun()
+
     # --- Navigation: simple main menu ---
     if "page" not in st.session_state:
         st.session_state.page = "Главная"
