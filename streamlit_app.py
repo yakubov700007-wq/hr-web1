@@ -427,14 +427,14 @@ def main():
         st.session_state.page = "Главная"
         safe_rerun()
     
-    if st.sidebar.button("☺ Сотрудники", 
+    if st.sidebar.button("☉ Сотрудники", 
                         key="nav_employees", 
                         type="primary" if current_page == "Сотрудники" else "secondary",
                         use_container_width=True):
         st.session_state.page = "Сотрудники"
         safe_rerun()
     
-    if st.sidebar.button("📡 Базовые станции", 
+    if st.sidebar.button("↯ Базовые станции", 
                         key="nav_stations",
                         type="primary" if current_page == "⌁ Базовые станции" else "secondary", 
                         use_container_width=True):
