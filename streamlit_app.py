@@ -544,29 +544,7 @@ def main():
                         else:
                             st.info("Нет фото")
 
-                        # only admins can upload/replace files
-                        if st.session_state.get("role") == "admin":
-                            up_new_photo = st.file_uploader(f"Заменить фото для {name}", type=["jpg","jpeg","png"], key=f"station_photo_{station_id}")
-                            if up_new_photo is not None:
-                                new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
-                                update_station(station_id, (
-                                    name, location, s_type, frequency, power, status, contact, notes, region,
-                                    pdf_file or "", new_path
-                                ))
-                                st.success("Фото обновлено")
-                                safe_rerun()
 
-                            up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {name}", type=["pdf"], key=f"station_pdf_{station_id}")
-                            if up_new_pdf is not None:
-                                new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
-                                update_station(station_id, (
-                                    name, location, s_type, frequency, power, status, contact, notes, region,
-                                    new_pdf, photo_file or ""
-                                ))
-                                st.success("PDF обновлён")
-                                safe_rerun()
-                        else:
-                            st.caption("Только просмотр — загрузка файлов недоступна")
 
                     with cols_top[1]:
                         st.markdown("**Информация о станции**")
