@@ -433,17 +433,23 @@ def main():
 
         # Сделать пункты меню интерактивными кнопками на главной странице
         cols = st.columns(2)
+        page_changed = False
+        
         with cols[0]:
             if st.button("Сотрудники", key="menu_btn_employees"):
                 st.session_state.page = "Сотрудники"
-                safe_rerun()
+                page_changed = True
             st.caption("Управление персоналом — добавление, редактирование, поиск")
 
         with cols[1]:
             if st.button("⌁ Базовые станции", key="menu_btn_stations"):
                 st.session_state.page = "⌁ Базовые станции"
-                safe_rerun()
+                page_changed = True
             st.caption("Управление базовыми станциями: добавление, настройки, файлы")
+
+        # Обновить страницу только если была нажата кнопка
+        if page_changed:
+            safe_rerun()
 
         return
 
