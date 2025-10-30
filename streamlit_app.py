@@ -532,31 +532,16 @@ def main():
                 ) = row
                 
                 with st.expander(f"{name} — {location}", expanded=False):
-                    cols_top = st.columns([1,2])
-                    with cols_top[0]:
-                        # display photo if present
-                        abs_photo = get_abs_path(photo_file)
-                        if photo_file and os.path.isfile(abs_photo):
-                            try:
-                                st.image(Image.open(abs_photo), width=220)
-                            except Exception:
-                                st.info("Нет фото")
-                        else:
-                            st.info("Нет фото")
-
-
-
-                    with cols_top[1]:
-                        st.markdown("**Информация о станции**")
-                        info_cols = st.columns(2)
-                        with info_cols[0]:
-                            st.text(f"Тип: {s_type}")
-                            st.text(f"Частота: {frequency}")
-                            st.text(f"Мощность: {power}")
-                        with info_cols[1]:
-                            st.text(f"Статус: {status}")
-                            st.text(f"Регион: {region}")
-                            st.text(f"Контакт: {contact}")
+                    st.markdown("**Информация о станции**")
+                    info_cols = st.columns(2)
+                    with info_cols[0]:
+                        st.text(f"Тип: {s_type}")
+                        st.text(f"Частота: {frequency}")
+                        st.text(f"Мощность: {power}")
+                    with info_cols[1]:
+                        st.text(f"Статус: {status}")
+                        st.text(f"Регион: {region}")
+                        st.text(f"Контакт: {contact}")
                         if notes:
                             st.text(f"Примечания: {notes}")
                         abs_pdf = get_abs_path(pdf_file)
