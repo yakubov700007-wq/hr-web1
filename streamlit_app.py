@@ -28,7 +28,7 @@ os.makedirs(PDFS_DIR, exist_ok=True)
 
 
 def init_db():
-    """Create the employees database and table if they don't exist."""
+    """Create the employees and stations database tables if they don't exist."""
     os.makedirs(DATA_DIR, exist_ok=True)
     conn = get_conn()
     c = conn.cursor()
@@ -45,6 +45,24 @@ def init_db():
             vazifa TEXT,
             phone TEXT,
             dog_no TEXT,
+            pdf_file TEXT,
+            photo_file TEXT
+        )
+        """
+    )
+    # Create base stations table
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS stations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            location TEXT,
+            type TEXT,
+            frequency TEXT,
+            power TEXT,
+            status TEXT,
+            contact TEXT,
+            notes TEXT,
             pdf_file TEXT,
             photo_file TEXT
         )
@@ -135,6 +153,79 @@ def delete_employee(emp_id):
     conn = get_conn()
     c = conn.cursor()
     c.execute("DELETE FROM employees WHERE id=?", (emp_id,))
+    conn.commit()
+    conn.close()
+
+
+# --- Station DB helpers ---
+
+def fetch_stations(search="", station_type="Все"):
+    conn = get_conn()
+    c = conn.cursor()
+    sql = "SELECT id, name, location, type, frequency, power, status, contact, notes, pdf_file, photo_file FROM stations"
+    where = []
+    params = []
+    if station_type and station_type != "Все":
+        where.append("type = ?")
+        params.append(station_type)
+    if search:
+        like = f"%{search.strip()}%"
+        where.append("(name LIKE ? OR location LIKE ? OR contact LIKE ? OR notes LIKE ?)")
+        params.extend([like, like, like, like])
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY name ASC"
+    c.execute(sql, params)
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+
+def station_exists(name, exclude_id=None):
+    conn = get_conn()
+    c = conn.cursor()
+    if exclude_id is None:
+        c.execute("SELECT 1 FROM stations WHERE name=? LIMIT 1", (name,))
+    else:
+        c.execute("SELECT 1 FROM stations WHERE name=? AND id<>? LIMIT 1", (name, exclude_id))
+    row = c.fetchone()
+    conn.close()
+    return row is not None
+
+
+def add_station(data):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO stations (name, location, type, frequency, power, status, contact, notes, pdf_file, photo_file)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        data,
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_station(station_id, data):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute(
+        """
+        UPDATE stations
+        SET name=?, location=?, type=?, frequency=?, power=?, status=?, contact=?, notes=?, pdf_file=?, photo_file=?
+        WHERE id=?
+        """,
+        (*data, station_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_station(station_id):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM stations WHERE id=?", (station_id,))
     conn.commit()
     conn.close()
 
@@ -236,6 +327,40 @@ def employee_form(defaults=None, disabled: bool = False, key_prefix: str | None 
     return rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no, pdf_file, photo_file
 
 
+def station_form(defaults=None, disabled: bool = False, key_prefix: str | None = None):
+    """Render station form inputs. If disabled=True inputs are readonly/disabled.
+
+    key_prefix: optional string used to create unique widget keys when the form
+    is rendered multiple times (for example per-station edit forms). If None,
+    a default prefix 'st' is used.
+
+    Returns tuple of values for station fields.
+    """
+    defaults = defaults or {}
+    kp = (key_prefix or "st").strip()
+    cols = st.columns(2)
+    with cols[0]:
+        name = st.text_input("Название станции", value=defaults.get("name", ""), disabled=disabled, key=f"{kp}_name")
+        location = st.text_input("Местоположение", value=defaults.get("location", ""), disabled=disabled, key=f"{kp}_location")
+        station_types = ["Базовая", "Ретранслятор", "Спутниковая", "Мобильная"]
+        default_type = defaults.get("type")
+        type_idx = 0 if default_type not in station_types else station_types.index(default_type)
+        station_type = st.selectbox("Тип станции", station_types, index=type_idx, disabled=disabled, key=f"{kp}_type")
+        frequency = st.text_input("Частота", value=defaults.get("frequency", ""), disabled=disabled, key=f"{kp}_frequency")
+        power = st.text_input("Мощность", value=defaults.get("power", ""), disabled=disabled, key=f"{kp}_power")
+    with cols[1]:
+        statuses = ["Активна", "Неактивна", "На обслуживании", "Резерв"]
+        default_status = defaults.get("status")
+        status_idx = 0 if default_status not in statuses else statuses.index(default_status)
+        status = st.selectbox("Статус", statuses, index=status_idx, disabled=disabled, key=f"{kp}_status")
+        contact = st.text_input("Контакт", value=defaults.get("contact", ""), disabled=disabled, key=f"{kp}_contact")
+        notes = st.text_area("Примечания", value=defaults.get("notes", ""), disabled=disabled, key=f"{kp}_notes")
+        pdf_file = defaults.get("pdf_file", "")
+        photo_file = defaults.get("photo_file", "")
+        st.write("")
+    return name, location, station_type, frequency, power, status, contact, notes, pdf_file, photo_file
+
+
 def main():
     # Ensure DB and data folders exist before any DB operations
     init_db()
@@ -285,14 +410,187 @@ def main():
                 if k in st.session_state:
                     del st.session_state[k]
             safe_rerun()
-    page = st.sidebar.radio("", ["Главная", "Сотрудники"], index=0 if st.session_state.page == "Главная" else 1, key="page")
+    # Determine current page index for radio button
+    page_options = ["Главная", "Сотрудники", "⌁ Базовые станции"]
+    current_page = st.session_state.get("page", "Главная")
+    try:
+        page_index = page_options.index(current_page)
+    except ValueError:
+        page_index = 0
+        st.session_state.page = "Главная"
+    
+    page = st.sidebar.radio("", page_options, index=page_index, key="page_radio")
+    
+    # Update session state page if radio selection changes
+    if page != current_page:
+        st.session_state.page = page
+        safe_rerun()
 
     if page == "Главная":
         st.header("Главное меню")
         st.write("Вы вошли в систему. Используйте меню слева, чтобы перейти в разделы.")
-        if st.button("Перейти к сотрудникам"):
-            st.session_state.page = "Сотрудники"
-            st.experimental_rerun()
+        st.write("Используйте меню в боковой панели для навигации между разделами:")
+        st.write("- **Сотрудники** - управление персоналом")
+        st.write("- **⌁ Базовые станции** - управление станциями связи")
+        return
+
+    elif page == "⌁ Базовые станции":
+        # Sidebar filters/actions for stations
+        st.sidebar.header("Фильтр")
+        station_type = st.sidebar.selectbox("Тип станции", ["Все", "Базовая", "Ретранслятор", "Спутниковая", "Мобильная"], index=0)
+        search = st.sidebar.text_input("Поиск")
+        st.sidebar.divider()
+        # only admins can add
+        if st.session_state.get("role") == "admin":
+            add_mode = st.sidebar.toggle("Добавить новую станцию", value=False)
+        else:
+            add_mode = False
+            st.sidebar.caption("Режим: только просмотр")
+
+        # Data table or add form
+        if add_mode:
+            st.subheader("Добавить базовую станцию")
+            with st.form("add_station_form"):
+                vals = station_form(key_prefix="add_station")
+                uploaded_photo = st.file_uploader("Фото (необязательно)", type=["jpg", "jpeg", "png"], accept_multiple_files=False)
+                uploaded_pdf = st.file_uploader("PDF (необязательно)", type=["pdf"], accept_multiple_files=False)
+                submitted = st.form_submit_button("Сохранить")
+            if submitted:
+                station_name = vals[0].strip()
+                if not station_name:
+                    st.error("Название станции обязательно")
+                    st.stop()
+                if station_exists(station_name):
+                    st.error("Такая станция уже существует")
+                    st.stop()
+                pdf_path = vals[8]
+                photo_path = vals[9]
+                if uploaded_photo is not None:
+                    photo_path = safe_write_file(PHOTOS_DIR, uploaded_photo.name, uploaded_photo.getvalue())
+                if uploaded_pdf is not None:
+                    pdf_path = safe_write_file(PDFS_DIR, uploaded_pdf.name, uploaded_pdf.getvalue())
+                add_station((
+                    station_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7],
+                    pdf_path or "", photo_path or ""
+                ))
+                st.success("Станция добавлена")
+                safe_rerun()
+        else:
+            rows = fetch_stations(search=search, station_type=station_type)
+            st.caption(f"Найдено станций: {len(rows)}")
+
+            for row in rows:
+                (
+                    station_id, name, location, s_type, frequency, power, status, contact, notes, pdf_file, photo_file
+                ) = row
+                with st.expander(f"{name} — {location}", expanded=False):
+                    cols_top = st.columns([1,2])
+                    with cols_top[0]:
+                        # display photo if present
+                        abs_photo = get_abs_path(photo_file)
+                        if photo_file and os.path.isfile(abs_photo):
+                            try:
+                                st.image(Image.open(abs_photo), width=220)
+                            except Exception:
+                                st.info("Нет фото")
+                        else:
+                            st.info("Нет фото")
+
+                        # only admins can upload/replace files
+                        if st.session_state.get("role") == "admin":
+                            up_new_photo = st.file_uploader(f"Заменить фото для {name}", type=["jpg","jpeg","png"], key=f"station_photo_{station_id}")
+                            if up_new_photo is not None:
+                                new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
+                                update_station(station_id, (
+                                    name, location, s_type, frequency, power, status, contact, notes,
+                                    pdf_file or "", new_path
+                                ))
+                                st.success("Фото обновлено")
+                                safe_rerun()
+
+                            up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {name}", type=["pdf"], key=f"station_pdf_{station_id}")
+                            if up_new_pdf is not None:
+                                new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
+                                update_station(station_id, (
+                                    name, location, s_type, frequency, power, status, contact, notes,
+                                    new_pdf, photo_file or ""
+                                ))
+                                st.success("PDF обновлён")
+                                safe_rerun()
+                        else:
+                            st.caption("Только просмотр — загрузка файлов недоступна")
+
+                    with cols_top[1]:
+                        st.markdown("**Информация о станции**")
+                        info_cols = st.columns(2)
+                        with info_cols[0]:
+                            st.text(f"Тип: {s_type}")
+                            st.text(f"Частота: {frequency}")
+                            st.text(f"Мощность: {power}")
+                        with info_cols[1]:
+                            st.text(f"Статус: {status}")
+                            st.text(f"Контакт: {contact}")
+                        if notes:
+                            st.text(f"Примечания: {notes}")
+                        abs_pdf = get_abs_path(pdf_file)
+                        if pdf_file and os.path.isfile(abs_pdf):
+                            st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"station_dl_{station_id}")
+                        else:
+                            st.caption("PDF не прикреплён")
+
+                        st.divider()
+                        # Edit block: only admins may edit/delete. Viewers see read-only fields.
+                        if st.session_state.get("role") == "admin":
+                            st.markdown("**Редактировать станцию**")
+                            with st.form(f"edit_station_{station_id}"):
+                                vals = station_form({
+                                    "name": name,
+                                    "location": location,
+                                    "type": s_type,
+                                    "frequency": frequency,
+                                    "power": power,
+                                    "status": status,
+                                    "contact": contact,
+                                    "notes": notes,
+                                    "pdf_file": pdf_file or "",
+                                    "photo_file": photo_file or "",
+                                }, disabled=False, key_prefix=f"station_{station_id}")
+                                save = st.form_submit_button("Сохранить изменения")
+                            cols_btn = st.columns(2)
+                            if save:
+                                new_name = vals[0].strip()
+                                if not new_name:
+                                    st.error("Название станции обязательно")
+                                    st.stop()
+                                if station_exists(new_name, exclude_id=station_id):
+                                    st.error("Такая станция уже существует")
+                                    st.stop()
+                                update_station(station_id, (
+                                    new_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8] or "", vals[9] or ""
+                                ))
+                                st.success("Сохранено")
+                                safe_rerun()
+                            with cols_btn[1]:
+                                if st.button("Удалить", type="primary", key=f"station_del_{station_id}"):
+                                    delete_station(station_id)
+                                    st.warning("Станция удалена")
+                                    safe_rerun()
+                        else:
+                            st.markdown("**Информация (только для чтения)**")
+                            # render the same fields but disabled so user can view values
+                            station_form({
+                                "name": name,
+                                "location": location,
+                                "type": s_type,
+                                "frequency": frequency,
+                                "power": power,
+                                "status": status,
+                                "contact": contact,
+                                "notes": notes,
+                                "pdf_file": pdf_file or "",
+                                "photo_file": photo_file or "",
+                            }, disabled=True, key_prefix=f"view_station_{station_id}")
+                            st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
         return
 
     # If we are here — page == 'Сотрудники'
@@ -455,7 +753,6 @@ def main():
                             "photo_file": photo_file or "",
                         }, disabled=True, key_prefix=f"view_{emp_id}")
                         st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
-
 
 if __name__ == "__main__":
     main()
