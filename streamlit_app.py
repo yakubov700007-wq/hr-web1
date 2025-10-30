@@ -506,8 +506,6 @@ def main():
             st.subheader("Добавить базовую станцию")
             with st.form("add_station_form"):
                 vals = station_form(key_prefix="add_station")
-                uploaded_photo = st.file_uploader("Фото (необязательно)", type=["jpg", "jpeg", "png"], accept_multiple_files=False)
-                uploaded_pdf = st.file_uploader("PDF (необязательно)", type=["pdf"], accept_multiple_files=False)
                 submitted = st.form_submit_button("Сохранить")
             if submitted:
                 station_name = vals[0].strip()
@@ -517,15 +515,9 @@ def main():
                 if station_exists(station_name):
                     st.error("Такая станция уже существует")
                     st.stop()
-                pdf_path = vals[8]
-                photo_path = vals[9]
-                if uploaded_photo is not None:
-                    photo_path = safe_write_file(PHOTOS_DIR, uploaded_photo.name, uploaded_photo.getvalue())
-                if uploaded_pdf is not None:
-                    pdf_path = safe_write_file(PDFS_DIR, uploaded_pdf.name, uploaded_pdf.getvalue())
                 add_station((
                     station_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8],
-                    pdf_path or "", photo_path or ""
+                    "", ""  # Empty strings for PDF and photo paths
                 ))
                 st.success("Станция добавлена")
                 safe_rerun()
