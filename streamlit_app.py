@@ -63,11 +63,17 @@ def init_db():
             status TEXT,
             contact TEXT,
             notes TEXT,
+            region TEXT,
             pdf_file TEXT,
             photo_file TEXT
         )
         """
     )
+    # Add region column if it doesn't exist (for existing databases)
+    try:
+        c.execute("ALTER TABLE stations ADD COLUMN region TEXT")
+    except Exception:
+        pass  # Column already exists
     conn.commit()
     conn.close()
 
@@ -159,15 +165,15 @@ def delete_employee(emp_id):
 
 # --- Station DB helpers ---
 
-def fetch_stations(search="", station_type="Все"):
+def fetch_stations(search="", region="Все"):
     conn = get_conn()
     c = conn.cursor()
-    sql = "SELECT id, name, location, type, frequency, power, status, contact, notes, pdf_file, photo_file FROM stations"
+    sql = "SELECT id, name, location, type, frequency, power, status, contact, notes, region, pdf_file, photo_file FROM stations"
     where = []
     params = []
-    if station_type and station_type != "Все":
-        where.append("type = ?")
-        params.append(station_type)
+    if region and region != "Все":
+        where.append("region = ?")
+        params.append(region)
     if search:
         like = f"%{search.strip()}%"
         where.append("(name LIKE ? OR location LIKE ? OR contact LIKE ? OR notes LIKE ?)")
@@ -198,8 +204,8 @@ def add_station(data):
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO stations (name, location, type, frequency, power, status, contact, notes, pdf_file, photo_file)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO stations (name, location, type, frequency, power, status, contact, notes, region, pdf_file, photo_file)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         data,
     )
@@ -213,7 +219,7 @@ def update_station(station_id, data):
     c.execute(
         """
         UPDATE stations
-        SET name=?, location=?, type=?, frequency=?, power=?, status=?, contact=?, notes=?, pdf_file=?, photo_file=?
+        SET name=?, location=?, type=?, frequency=?, power=?, status=?, contact=?, notes=?, region=?, pdf_file=?, photo_file=?
         WHERE id=?
         """,
         (*data, station_id),
@@ -353,12 +359,16 @@ def station_form(defaults=None, disabled: bool = False, key_prefix: str | None =
         default_status = defaults.get("status")
         status_idx = 0 if default_status not in statuses else statuses.index(default_status)
         status = st.selectbox("Статус", statuses, index=status_idx, disabled=disabled, key=f"{kp}_status")
+        regions = ["РРП", "ВМКБ", "РУХО", "РУСО"]
+        default_region = defaults.get("region")
+        region_idx = 0 if default_region not in regions else regions.index(default_region)
+        region = st.selectbox("Регион", regions, index=region_idx, disabled=disabled, key=f"{kp}_region")
         contact = st.text_input("Контакт", value=defaults.get("contact", ""), disabled=disabled, key=f"{kp}_contact")
         notes = st.text_area("Примечания", value=defaults.get("notes", ""), disabled=disabled, key=f"{kp}_notes")
         pdf_file = defaults.get("pdf_file", "")
         photo_file = defaults.get("photo_file", "")
         st.write("")
-    return name, location, station_type, frequency, power, status, contact, notes, pdf_file, photo_file
+    return name, location, station_type, frequency, power, status, contact, notes, region, pdf_file, photo_file
 
 
 def main():
@@ -496,7 +506,7 @@ def main():
 
         # Sidebar filters/actions for stations  
         st.sidebar.header("Фильтр")
-        station_type = st.sidebar.selectbox("Тип станции", ["Все", "Базовая", "Ретранслятор", "Спутниковая", "Мобильная"], index=0)
+        region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
         search = st.sidebar.text_input("Поиск")
         st.sidebar.divider()
         
@@ -531,13 +541,13 @@ def main():
                 if uploaded_pdf is not None:
                     pdf_path = safe_write_file(PDFS_DIR, uploaded_pdf.name, uploaded_pdf.getvalue())
                 add_station((
-                    station_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7],
+                    station_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8],
                     pdf_path or "", photo_path or ""
                 ))
                 st.success("Станция добавлена")
                 safe_rerun()
         else:
-            rows = fetch_stations(search=search, station_type=station_type)
+            rows = fetch_stations(search=search, region=region)
             
             # Show delete mode info if active
             if st.session_state.get("show_delete_mode", False) and st.session_state.get("role") == "admin":
@@ -547,7 +557,7 @@ def main():
 
             for row in rows:
                 (
-                    station_id, name, location, s_type, frequency, power, status, contact, notes, pdf_file, photo_file
+                    station_id, name, location, s_type, frequency, power, status, contact, notes, region, pdf_file, photo_file
                 ) = row
                 
                 # Create expander title with delete button if in delete mode
@@ -585,7 +595,7 @@ def main():
                             if up_new_photo is not None:
                                 new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
                                 update_station(station_id, (
-                                    name, location, s_type, frequency, power, status, contact, notes,
+                                    name, location, s_type, frequency, power, status, contact, notes, region,
                                     pdf_file or "", new_path
                                 ))
                                 st.success("Фото обновлено")
@@ -595,7 +605,7 @@ def main():
                             if up_new_pdf is not None:
                                 new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
                                 update_station(station_id, (
-                                    name, location, s_type, frequency, power, status, contact, notes,
+                                    name, location, s_type, frequency, power, status, contact, notes, region,
                                     new_pdf, photo_file or ""
                                 ))
                                 st.success("PDF обновлён")
@@ -612,6 +622,7 @@ def main():
                             st.text(f"Мощность: {power}")
                         with info_cols[1]:
                             st.text(f"Статус: {status}")
+                            st.text(f"Регион: {region}")
                             st.text(f"Контакт: {contact}")
                         if notes:
                             st.text(f"Примечания: {notes}")
@@ -635,6 +646,7 @@ def main():
                                     "status": status,
                                     "contact": contact,
                                     "notes": notes,
+                                    "region": region,
                                     "pdf_file": pdf_file or "",
                                     "photo_file": photo_file or "",
                                 }, disabled=False, key_prefix=f"station_{station_id}")
@@ -649,7 +661,7 @@ def main():
                                     st.error("Такая станция уже существует")
                                     st.stop()
                                 update_station(station_id, (
-                                    new_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8] or "", vals[9] or ""
+                                    new_name, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9] or "", vals[10] or ""
                                 ))
                                 st.success("Сохранено")
                                 safe_rerun()
@@ -670,6 +682,7 @@ def main():
                                 "status": status,
                                 "contact": contact,
                                 "notes": notes,
+                                "region": region,
                                 "pdf_file": pdf_file or "",
                                 "photo_file": photo_file or "",
                             }, disabled=True, key_prefix=f"view_station_{station_id}")
