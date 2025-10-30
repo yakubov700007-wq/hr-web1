@@ -482,26 +482,10 @@ def main():
         return
 
     elif page == "⌁ Базовые станции":
-        # Header with action buttons
-        st.header("Управление базовыми станциями")
+        st.header("Базовые станции")
         
-        # Action buttons for admin users
-        if st.session_state.get("role") == "admin":
-            col1, col2, col3 = st.columns([2, 1, 1])
-            with col1:
-                st.write("") # spacer
-            with col2:
-                add_station_btn = st.button("➕ Добавить станцию", type="primary", use_container_width=True)
-            with col3:
-                if "show_delete_mode" not in st.session_state:
-                    st.session_state.show_delete_mode = False
-                delete_mode_btn = st.button("🗑️ Режим удаления", 
-                                          type="secondary" if not st.session_state.show_delete_mode else "primary",
-                                          use_container_width=True)
-                if delete_mode_btn:
-                    st.session_state.show_delete_mode = not st.session_state.show_delete_mode
-                    safe_rerun()
-        else:
+        # Show view-only info for non-admin users
+        if st.session_state.get("role") != "admin":
             st.info("👁️ Режим только для просмотра - добавление и удаление недоступно")
 
         # Sidebar filters/actions for stations  
@@ -510,10 +494,9 @@ def main():
         search = st.sidebar.text_input("Поиск")
         st.sidebar.divider()
         
-        # Determine add mode from button click or existing toggle
+        # Determine add mode from sidebar toggle only
         if st.session_state.get("role") == "admin":
-            # Check if add button was clicked or toggle is on
-            add_mode = add_station_btn or st.sidebar.toggle("Добавить новую станцию", value=False, key="sidebar_add_toggle")
+            add_mode = st.sidebar.toggle("Добавить новую станцию", value=False, key="sidebar_add_toggle")
         else:
             add_mode = False
             st.sidebar.caption("Режим: только просмотр")
@@ -549,10 +532,6 @@ def main():
         else:
             rows = fetch_stations(search=search, region=region)
             
-            # Show delete mode info if active
-            if st.session_state.get("show_delete_mode", False) and st.session_state.get("role") == "admin":
-                st.warning("🗑️ **Режим удаления активен** - нажмите красную кнопку для удаления станции")
-            
             st.caption(f"Найдено станций: {len(rows)}")
 
             for row in rows:
@@ -560,23 +539,7 @@ def main():
                     station_id, name, location, s_type, frequency, power, status, contact, notes, region, pdf_file, photo_file
                 ) = row
                 
-                # Create expander title with delete button if in delete mode
-                if st.session_state.get("show_delete_mode", False) and st.session_state.get("role") == "admin":
-                    # Show station info with delete button
-                    col_exp, col_del = st.columns([4, 1])
-                    with col_exp:
-                        expander = st.expander(f"{name} — {location}", expanded=False)
-                    with col_del:
-                        if st.button("🗑️", key=f"quick_del_{station_id}", type="primary", 
-                                   help=f"Удалить станцию: {name}",
-                                   use_container_width=True):
-                            delete_station(station_id)
-                            st.success(f"Станция '{name}' удалена")
-                            safe_rerun()
-                else:
-                    expander = st.expander(f"{name} — {location}", expanded=False)
-                
-                with expander:
+                with st.expander(f"{name} — {location}", expanded=False):
                     cols_top = st.columns([1,2])
                     with cols_top[0]:
                         # display photo if present
