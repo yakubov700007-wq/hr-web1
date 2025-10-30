@@ -410,30 +410,38 @@ def main():
                 if k in st.session_state:
                     del st.session_state[k]
             safe_rerun()
-    # Navigation with radio buttons in sidebar
-    page_options = ["Главная", "Сотрудники", "⌁ Базовые станции"]
+    # Navigation with individual buttons in sidebar for instant single-click navigation
+    st.sidebar.header("Навигация")
     
     # Get current page from session state, default to "Главная"
     if "page" not in st.session_state:
         st.session_state.page = "Главная"
     
-    # Determine current page index for radio button
     current_page = st.session_state.page
-    try:
-        page_index = page_options.index(current_page)
-    except ValueError:
-        page_index = 0
+    
+    # Individual navigation buttons with visual indicators
+    if st.sidebar.button("🏠 Главная", 
+                        key="nav_home",
+                        type="primary" if current_page == "Главная" else "secondary",
+                        use_container_width=True):
         st.session_state.page = "Главная"
-    
-    # Radio button for navigation
-    selected_page = st.sidebar.radio("Навигация", page_options, index=page_index, key="nav_radio")
-    
-    # Update session state if selection changed
-    if selected_page != st.session_state.page:
-        st.session_state.page = selected_page
         safe_rerun()
     
-    # Use the session state page for logic (not the radio return value)
+    if st.sidebar.button("👥 Сотрудники", 
+                        key="nav_employees", 
+                        type="primary" if current_page == "Сотрудники" else "secondary",
+                        use_container_width=True):
+        st.session_state.page = "Сотрудники"
+        safe_rerun()
+    
+    if st.sidebar.button("⌁ Базовые станции", 
+                        key="nav_stations",
+                        type="primary" if current_page == "⌁ Базовые станции" else "secondary", 
+                        use_container_width=True):
+        st.session_state.page = "⌁ Базовые станции"
+        safe_rerun()
+    
+    # Use the session state page for logic
     page = st.session_state.page
 
     if page == "Главная":
