@@ -410,21 +410,31 @@ def main():
                 if k in st.session_state:
                     del st.session_state[k]
             safe_rerun()
-    # Determine current page index for radio button
+    # Navigation with radio buttons in sidebar
     page_options = ["Главная", "Сотрудники", "⌁ Базовые станции"]
-    current_page = st.session_state.get("page", "Главная")
+    
+    # Get current page from session state, default to "Главная"
+    if "page" not in st.session_state:
+        st.session_state.page = "Главная"
+    
+    # Determine current page index for radio button
+    current_page = st.session_state.page
     try:
         page_index = page_options.index(current_page)
     except ValueError:
         page_index = 0
         st.session_state.page = "Главная"
     
-    page = st.sidebar.radio("", page_options, index=page_index, key="page_radio")
+    # Radio button for navigation
+    selected_page = st.sidebar.radio("Навигация", page_options, index=page_index, key="nav_radio")
     
-    # Update session state page if radio selection changes
-    if page != current_page:
-        st.session_state.page = page
+    # Update session state if selection changed
+    if selected_page != st.session_state.page:
+        st.session_state.page = selected_page
         safe_rerun()
+    
+    # Use the session state page for logic (not the radio return value)
+    page = st.session_state.page
 
     if page == "Главная":
         st.header("Главное меню")
