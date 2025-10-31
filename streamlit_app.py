@@ -76,6 +76,24 @@ def init_db():
         c.execute("ALTER TABLE stations ADD COLUMN region TEXT")
     except Exception:
         pass  # Column already exists
+    
+    # Create maintenance history table
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS station_maintenance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            station_id INTEGER,
+            maintenance_date TEXT,
+            maintenance_type TEXT,
+            parts_replaced TEXT,
+            notes TEXT,
+            user_name TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (station_id) REFERENCES stations (id)
+        )
+        """
+    )
+    
     conn.commit()
     conn.close()
 
@@ -236,6 +254,86 @@ def delete_station(station_id):
     c.execute("DELETE FROM stations WHERE id=?", (station_id,))
     conn.commit()
     conn.close()
+
+
+# --- Maintenance helpers ---
+
+def add_maintenance_record(station_id, maintenance_type, parts_replaced, notes, user_name):
+    """Добавить запись об обслуживании станции"""
+    conn = get_conn()
+    c = conn.cursor()
+    maintenance_date = datetime.now().strftime("%Y-%m-%d")
+    c.execute(
+        """
+        INSERT INTO station_maintenance (station_id, maintenance_date, maintenance_type, parts_replaced, notes, user_name)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (station_id, maintenance_date, maintenance_type, parts_replaced, notes, user_name)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_maintenance_records(station_id=None, date_filter=None):
+    """Получить записи об обслуживании"""
+    conn = get_conn()
+    c = conn.cursor()
+    
+    sql = """
+    SELECT sm.*, s.name as station_name, s.region 
+    FROM station_maintenance sm 
+    JOIN stations s ON sm.station_id = s.id
+    """
+    params = []
+    where_conditions = []
+    
+    if station_id:
+        where_conditions.append("sm.station_id = ?")
+        params.append(station_id)
+    
+    if date_filter:
+        where_conditions.append("sm.maintenance_date = ?")
+        params.append(date_filter)
+    
+    if where_conditions:
+        sql += " WHERE " + " AND ".join(where_conditions)
+    
+    sql += " ORDER BY sm.maintenance_date DESC, sm.created_at DESC"
+    
+    c.execute(sql, params)
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+
+def get_maintenance_stats(date_filter=None):
+    """Получить статистику обслуживания за день"""
+    conn = get_conn()
+    c = conn.cursor()
+    
+    if date_filter:
+        date_str = date_filter
+    else:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # Общее количество обслуженных станций
+    c.execute("""
+        SELECT COUNT(DISTINCT station_id) as total_maintained,
+               SUM(CASE WHEN maintenance_type = 'repair' THEN 1 ELSE 0 END) as repairs,
+               SUM(CASE WHEN maintenance_type = 'service' THEN 1 ELSE 0 END) as services
+        FROM station_maintenance 
+        WHERE maintenance_date = ?
+    """, (date_str,))
+    
+    stats = c.fetchone()
+    conn.close()
+    
+    return {
+        'date': date_str,
+        'total_maintained': stats[0] if stats else 0,
+        'repairs': stats[1] if stats else 0,
+        'services': stats[2] if stats else 0
+    }
 
 
 # --- File helpers ---
@@ -775,8 +873,29 @@ def main():
                                 new_notes = st.text_area("Примечания", value=notes, disabled=False, key=f"editable_notes_{station_id}", 
                                                         height=100, help="Вы можете оставлять свои заметки и отчеты")
                                 
-                            # Кнопка сохранения только для примечаний
-                            save_notes = st.form_submit_button("❏ Сохранить заметки", help="Сохранить изменения в примечаниях")
+                                # Чекбоксы обслуживания
+                                st.markdown("**🔧 Сегодняшнее обслуживание**")
+                                col_maint1, col_maint2 = st.columns(2)
+                                
+                                with col_maint1:
+                                    repaired_today = st.checkbox("🔨 Отремонтировано сегодня", key=f"repair_{station_id}")
+                                    serviced_today = st.checkbox("⚙️ Обслужено сегодня", key=f"service_{station_id}")
+                                
+                                with col_maint2:
+                                    if repaired_today or serviced_today:
+                                        parts_replaced = st.text_input("Замененные запчасти", key=f"parts_{station_id}", 
+                                                                     help="Укажите какие запчасти заменяли")
+                                        maintenance_notes = st.text_area("Детали работ", key=f"maint_notes_{station_id}", 
+                                                                        height=60, help="Подробности обслуживания/ремонта")
+                                
+                            # Кнопки сохранения
+                            col_save1, col_save2 = st.columns(2)
+                            with col_save1:
+                                save_notes = st.form_submit_button("❏ Сохранить заметки", help="Сохранить изменения в примечаниях")
+                            with col_save2:
+                                save_maintenance = st.form_submit_button("🔧 Отметить обслуживание", 
+                                                                       help="Сохранить информацию об обслуживании",
+                                                                       disabled=not (repaired_today or serviced_today))
                         
                         if save_notes:
                             # Обновляем только поле примечаний, остальные поля остаются неизменными
@@ -786,10 +905,97 @@ def main():
                             st.success("✅ Заметки сохранены! Администратор увидит ваши изменения.")
                             safe_rerun()
                         
+                        if save_maintenance and (repaired_today or serviced_today):
+                            # Определяем тип обслуживания
+                            maintenance_types = []
+                            if repaired_today:
+                                maintenance_types.append("repair")
+                            if serviced_today:
+                                maintenance_types.append("service")
+                            
+                            # Сохраняем каждый тип обслуживания как отдельную запись
+                            for mtype in maintenance_types:
+                                type_name = "Ремонт" if mtype == "repair" else "Обслуживание"
+                                user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
+                                
+                                # Формируем текст с деталями
+                                maintenance_detail = f"{type_name}"
+                                if 'parts_replaced' in locals() and parts_replaced:
+                                    maintenance_detail += f" | Запчасти: {parts_replaced}"
+                                if 'maintenance_notes' in locals() and maintenance_notes:
+                                    maintenance_detail += f" | Детали: {maintenance_notes}"
+                                
+                                add_maintenance_record(
+                                    station_id, 
+                                    mtype, 
+                                    parts_replaced if 'parts_replaced' in locals() else "", 
+                                    maintenance_notes if 'maintenance_notes' in locals() else "", 
+                                    user_name
+                                )
+                            
+                            st.success(f"✅ Обслуживание отмечено! Записано: {', '.join([('Ремонт' if t == 'repair' else 'Обслуживание') for t in maintenance_types])}")
+                            safe_rerun()
+                        
                         st.caption("📖 Информация станции доступна только для просмотра. Вы можете редактировать только примечания.")
         
         with tab2:
             st.subheader("📊 Отчеты по базовым станциям")
+            
+            # Отчеты по обслуживанию
+            st.markdown("### 🔧 Отчеты по обслуживанию")
+            
+            # Выбор даты для отчета
+            col_date1, col_date2 = st.columns(2)
+            with col_date1:
+                report_date = st.date_input("Дата отчета", value=datetime.now().date())
+            with col_date2:
+                date_str = report_date.strftime("%Y-%m-%d")
+                maintenance_stats = get_maintenance_stats(date_str)
+            
+            # Показываем статистику обслуживания
+            if maintenance_stats['total_maintained'] > 0:
+                col_stat1, col_stat2, col_stat3 = st.columns(3)
+                
+                with col_stat1:
+                    st.metric("🔧 Всего обслужено", maintenance_stats['total_maintained'])
+                with col_stat2:
+                    st.metric("🔨 Отремонтировано", maintenance_stats['repairs'])
+                with col_stat3:
+                    st.metric("⚙️ Обслужено", maintenance_stats['services'])
+                
+                # Детальная информация по обслуживанию
+                st.markdown(f"#### 📋 Детали обслуживания за {date_str}")
+                maintenance_records = get_maintenance_records(date_filter=date_str)
+                
+                if maintenance_records:
+                    for record in maintenance_records:
+                        record_id, station_id, maint_date, maint_type, parts, notes, user_name, created_at, station_name, region = record
+                        
+                        type_icon = "🔨" if maint_type == "repair" else "⚙️"
+                        type_name = "Ремонт" if maint_type == "repair" else "Обслуживание"
+                        
+                        with st.expander(f"{type_icon} {station_name} ({region}) - {type_name}", expanded=False):
+                            col_info1, col_info2 = st.columns(2)
+                            
+                            with col_info1:
+                                st.write(f"**Станция:** {station_name}")
+                                st.write(f"**Регион:** {region}")
+                                st.write(f"**Тип работ:** {type_name}")
+                                st.write(f"**Дата:** {maint_date}")
+                            
+                            with col_info2:
+                                st.write(f"**Пользователь:** {user_name}")
+                                if parts:
+                                    st.write(f"**Запчасти:** {parts}")
+                                if notes:
+                                    st.write(f"**Детали:** {notes}")
+                                st.write(f"**Время записи:** {created_at}")
+                else:
+                    st.info("На выбранную дату записей об обслуживании нет")
+            else:
+                st.info(f"На {date_str} обслуживание станций не проводилось")
+            
+            st.divider()
             
             # Получаем все станции для статистики
             all_stations = fetch_stations()
