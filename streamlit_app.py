@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime
 import subprocess
 from io import BytesIO
+# Force update: red border for notes field
 
 import streamlit as st
 from PIL import Image
