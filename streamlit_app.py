@@ -274,7 +274,7 @@ def add_maintenance_record(station_id, maintenance_type, parts_replaced, notes, 
     conn.close()
 
 
-def get_maintenance_records(station_id=None, date_filter=None):
+def get_maintenance_records(station_id=None, date_filter=None, region_filter=None):
     """Получить записи об обслуживании"""
     conn = get_conn()
     c = conn.cursor()
@@ -294,6 +294,10 @@ def get_maintenance_records(station_id=None, date_filter=None):
     if date_filter:
         where_conditions.append("sm.maintenance_date = ?")
         params.append(date_filter)
+    
+    if region_filter and region_filter != "Все":
+        where_conditions.append("s.region = ?")
+        params.append(region_filter)
     
     if where_conditions:
         sql += " WHERE " + " AND ".join(where_conditions)
@@ -334,6 +338,42 @@ def get_maintenance_stats(date_filter=None):
         'repairs': stats[1] if stats else 0,
         'services': stats[2] if stats else 0
     }
+
+
+def get_maintenance_stats_by_region(date_filter=None, region_filter=None):
+    """Получить статистику обслуживания по регионам"""
+    conn = get_conn()
+    c = conn.cursor()
+    
+    if date_filter:
+        date_str = date_filter
+    else:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # SQL запрос с фильтром по регионам
+    sql = """
+        SELECT s.region,
+               COUNT(DISTINCT sm.station_id) as total_maintained,
+               SUM(CASE WHEN sm.maintenance_type = 'repair' THEN 1 ELSE 0 END) as repairs,
+               SUM(CASE WHEN sm.maintenance_type = 'service' THEN 1 ELSE 0 END) as services
+        FROM station_maintenance sm 
+        JOIN stations s ON sm.station_id = s.id
+        WHERE sm.maintenance_date = ?
+    """
+    
+    params = [date_str]
+    
+    if region_filter and region_filter != "Все":
+        sql += " AND s.region = ?"
+        params.append(region_filter)
+    
+    sql += " GROUP BY s.region ORDER BY s.region"
+    
+    c.execute(sql, params)
+    rows = c.fetchall()
+    conn.close()
+    
+    return rows
 
 
 # --- File helpers ---
@@ -930,13 +970,16 @@ def main():
             # Отчеты по обслуживанию
             st.markdown("### 🔧 Отчеты по обслуживанию")
             
-            # Выбор даты для отчета
-            col_date1, col_date2 = st.columns(2)
+            # Фильтры для отчета
+            col_date1, col_date2, col_region = st.columns(3)
             with col_date1:
                 report_date = st.date_input("Дата отчета", value=datetime.now().date())
             with col_date2:
                 date_str = report_date.strftime("%Y-%m-%d")
-                maintenance_stats = get_maintenance_stats(date_str)
+            with col_region:
+                report_region_filter = st.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], key="maintenance_region_filter")
+            
+            maintenance_stats = get_maintenance_stats(date_str)
             
             # Отладочная информация (временно)
             st.write(f"🔍 Отладка: Ищем записи за {date_str}")
@@ -954,9 +997,34 @@ def main():
                 with col_stat3:
                     st.metric("⚙️ Обслужено", maintenance_stats['services'])
                 
+                # Статистика по регионам
+                st.markdown("#### 🗺️ Статистика по регионам")
+                region_stats = get_maintenance_stats_by_region(date_str, report_region_filter)
+                
+                if region_stats:
+                    if report_region_filter != "Все":
+                        st.caption(f"Показаны данные только для региона: **{report_region_filter}**")
+                    
+                    # Создаем колонки для каждого региона
+                    num_regions = len(region_stats)
+                    if num_regions > 0:
+                        cols_regions = st.columns(min(num_regions, 5))  # Максимум 5 колонок
+                        
+                        for i, (region, total, repairs, services) in enumerate(region_stats):
+                            with cols_regions[i % 5]:
+                                st.markdown(f"**📍 {region}**")
+                                col_r1, col_r2 = st.columns(2)
+                                with col_r1:
+                                    st.metric("🔨", repairs, help="Отремонтировано")
+                                with col_r2:
+                                    st.metric("⚙️", services, help="Обслужено")
+                                st.metric("Всего", total, help="Общее количество станций")
+                else:
+                    st.info("Нет данных об обслуживании по регионам за выбранную дату")
+                
                 # Детальная информация по обслуживанию
                 st.markdown(f"#### 📋 Детали обслуживания за {date_str}")
-                maintenance_records = get_maintenance_records(date_filter=date_str)
+                maintenance_records = get_maintenance_records(date_filter=date_str, region_filter=report_region_filter)
                 
                 if maintenance_records:
                     for record in maintenance_records:
