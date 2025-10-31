@@ -875,20 +875,11 @@ def main():
                                 
                                 # Чекбоксы обслуживания
                                 st.markdown("**🔧 Сегодняшнее обслуживание**")
-                                col_maint1, col_maint2 = st.columns(2)
+                                repaired_today = st.checkbox("🔨 Отремонтировано сегодня", key=f"repair_{station_id}")
+                                serviced_today = st.checkbox("⚙️ Обслужено сегодня", key=f"service_{station_id}")
                                 
-                                with col_maint1:
-                                    repaired_today = st.checkbox("🔨 Отремонтировано сегодня", key=f"repair_{station_id}")
-                                    serviced_today = st.checkbox("⚙️ Обслужено сегодня", key=f"service_{station_id}")
-                                
-                                with col_maint2:
-                                    # Всегда показываем поля, но делаем их активными только при выборе чекбокса
-                                    parts_replaced = st.text_input("Замененные запчасти", key=f"parts_{station_id}", 
-                                                                 help="Укажите какие запчасти заменяли",
-                                                                 disabled=not (repaired_today or serviced_today))
-                                    maintenance_notes = st.text_area("Детали работ", key=f"maint_notes_{station_id}", 
-                                                                    height=60, help="Подробности обслуживания/ремонта",
-                                                                    disabled=not (repaired_today or serviced_today))
+                                if repaired_today or serviced_today:
+                                    st.caption("💡 Детали работ и замененные запчасти указывайте в примечаниях выше")
                                 
                             # Кнопки сохранения
                             col_save1, col_save2 = st.columns(2)
@@ -923,8 +914,8 @@ def main():
                                 add_maintenance_record(
                                     station_id, 
                                     mtype, 
-                                    parts_replaced or "", 
-                                    maintenance_notes or "", 
+                                    "", 
+                                    f"Тип: {type_name}", 
                                     user_name
                                 )
                             
@@ -985,11 +976,8 @@ def main():
                             
                             with col_info2:
                                 st.write(f"**Пользователь:** {user_name}")
-                                if parts:
-                                    st.write(f"**Запчасти:** {parts}")
-                                if notes:
-                                    st.write(f"**Детали:** {notes}")
                                 st.write(f"**Время записи:** {created_at}")
+                                st.caption("💡 Детали работ и запчасти смотрите в примечаниях станции")
                 else:
                     st.info("На выбранную дату записей об обслуживании нет")
             else:
