@@ -280,7 +280,7 @@ def get_maintenance_records(station_id=None, date_filter=None, region_filter=Non
     c = conn.cursor()
     
     sql = """
-    SELECT sm.*, s.name as station_name, s.region 
+    SELECT sm.*, s.name as station_name, s.region, s.notes as station_notes
     FROM station_maintenance sm 
     JOIN stations s ON sm.station_id = s.id
     """
@@ -1043,7 +1043,7 @@ def main():
                 
                 if maintenance_records:
                     for record in maintenance_records:
-                        record_id, station_id, maint_date, maint_type, parts, notes, user_name, created_at, station_name, region = record
+                        record_id, station_id, maint_date, maint_type, parts, notes, user_name, created_at, station_name, region, station_notes = record
                         
                         type_icon = "🔨" if maint_type == "repair" else "⚙️"
                         type_name = "Ремонт" if maint_type == "repair" else "Обслуживание"
@@ -1060,7 +1060,13 @@ def main():
                             with col_info2:
                                 st.write(f"**Пользователь:** {user_name}")
                                 st.write(f"**Время записи:** {created_at}")
-                                st.caption("💡 Детали работ и запчасти смотрите в примечаниях станции")
+                                
+                            # Показываем примечания станции (детали работ и запчасти)
+                            if station_notes and station_notes.strip():
+                                st.markdown("**💡 Детали работ и запчасти:**")
+                                st.text_area("", value=station_notes, height=100, disabled=True, key=f"notes_display_{record_id}")
+                            else:
+                                st.caption("💡 Примечания к станции не указаны")
                 else:
                     st.info("На выбранную дату записей об обслуживании нет")
             else:
