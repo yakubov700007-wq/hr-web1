@@ -690,6 +690,34 @@ def main():
         background-color: #ffffff !important;
         transform: scale(1.02) !important;
     }
+
+    /* Компактный список базовых станций */
+    /* Уменьшаем отступы, шрифты и размеры expander-элементов чтобы список выглядел компактнее */
+    div[data-testid="stExpander"] {
+        padding: 4px 6px !important;
+        margin-bottom: 6px !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stExpander"] .streamlit-expanderHeader,
+    div[data-testid="stExpander"] .streamlit-expanderHeader p {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+        padding: 6px 8px !important;
+    }
+    div[data-testid="stExpander"] .stMarkdown p {
+        margin: 4px 0 !important;
+        font-size: 13px !important;
+    }
+    div[data-testid="stCaptionContainer"] p {
+        font-size: 13px !important;
+        margin: 4px 0 !important;
+        padding: 4px 8px !important;
+        background: #f4f4f4 !important;
+        border-radius: 6px !important;
+        display: inline-block !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
