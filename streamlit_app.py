@@ -1060,11 +1060,16 @@ def main():
                             with col_info2:
                                 st.write(f"**Пользователь:** {user_name}")
                                 st.write(f"**Время записи:** {created_at}")
-                                # Показываем примечания станции в правой колонке третьим полем
+                                # Показываем примечания станции с заголовком и полем
+                                st.write("**💡 Детали работ и запчасти:**")
                                 if station_notes and station_notes.strip():
-                                    st.write(f"**💡 Детали работ и запчасти:** {station_notes}")
+                                    # Компактное поле с примечаниями
+                                    if len(station_notes) > 60:
+                                        st.text_area("", value=station_notes, height=60, disabled=True, key=f"notes_display_{record_id}")
+                                    else:
+                                        st.text_input("", value=station_notes, disabled=True, key=f"notes_display_{record_id}")
                                 else:
-                                    st.write("**💡 Детали работ и запчасти:** Не указаны")
+                                    st.text_input("", value="Не указаны", disabled=True, key=f"notes_empty_{record_id}")
                 else:
                     st.info("На выбранную дату записей об обслуживании нет")
             else:
