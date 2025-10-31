@@ -718,6 +718,20 @@ def main():
         border-radius: 6px !important;
         display: inline-block !important;
     }
+
+    /* Ограничиваем ширину карточек-экспандеров — делаем их компактнее по ширине */
+    div[data-testid="stExpander"] {
+        max-width: 520px !important; /* на больших экранах */
+        width: 100% !important;     /* внутри колонки будет занимать доступную ширину, но не больше max-width */
+        box-sizing: border-box !important;
+    }
+    /* Для очень узких экранов разрешаем 100% */
+    @media (max-width: 560px) {
+        div[data-testid="stExpander"] {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 
