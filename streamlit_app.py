@@ -382,62 +382,121 @@ def main():
     # Улучшение читаемости текста в формах
     st.markdown("""
     <style>
-    /* Улучшение читаемости в полях ввода */
-    .stTextInput > div > div > input {
+    /* Максимальное улучшение читаемости для всех полей ввода */
+    .stTextInput input,
+    .stTextInput > div > div > input,
+    input[type="text"],
+    input {
         color: #000000 !important;
         background-color: #ffffff !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        border: 1px solid #cccccc !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    .stTextArea > div > div > textarea {
+    .stTextArea textarea,
+    .stTextArea > div > div > textarea,
+    textarea {
         color: #000000 !important;
         background-color: #ffffff !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        border: 1px solid #cccccc !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    .stSelectbox > div > div > div {
+    .stSelectbox select,
+    .stSelectbox > div > div > div,
+    select {
         color: #000000 !important;
         background-color: #ffffff !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    /* Улучшение читаемости в disabled полях */
-    .stTextInput > div > div > input[disabled] {
-        color: #333333 !important;
-        background-color: #f8f9fa !important;
-        font-weight: 500 !important;
+    /* Усиленные стили для disabled полей */
+    .stTextInput input[disabled],
+    .stTextInput > div > div > input[disabled],
+    input[disabled] {
+        color: #000000 !important;
+        background-color: #f0f2f6 !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
         opacity: 1 !important;
+        border: 1px solid #d0d0d0 !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    .stTextArea > div > div > textarea[disabled] {
-        color: #333333 !important;
-        background-color: #f8f9fa !important;
-        font-weight: 500 !important;
+    .stTextArea textarea[disabled],
+    .stTextArea > div > div > textarea[disabled],
+    textarea[disabled] {
+        color: #000000 !important;
+        background-color: #f0f2f6 !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
         opacity: 1 !important;
+        border: 1px solid #d0d0d0 !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    .stSelectbox > div > div > div[aria-disabled="true"] {
-        color: #333333 !important;
-        background-color: #f8f9fa !important;
-        font-weight: 500 !important;
+    .stSelectbox select[disabled],
+    .stSelectbox > div > div > div[aria-disabled="true"],
+    select[disabled] {
+        color: #000000 !important;
+        background-color: #f0f2f6 !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
         opacity: 1 !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
-    /* Улучшение контрастности лейблов */
+    /* Максимальная контрастность для placeholder текста */
+    ::placeholder {
+        color: #666666 !important;
+        opacity: 1 !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Усиленные лейблы */
     .stTextInput > label,
     .stTextArea > label,
-    .stSelectbox > label {
+    .stSelectbox > label,
+    label {
         color: #000000 !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        text-shadow: none !important;
     }
     
-    /* Улучшение читаемости в expander */
-    .streamlit-expanderHeader {
-        font-weight: 600 !important;
+    /* Заголовки expander */
+    .streamlit-expanderHeader,
+    .streamlit-expanderHeader p {
+        font-weight: 700 !important;
         color: #000000 !important;
+        font-size: 16px !important;
+    }
+    
+    /* Дополнительные стили для всех текстовых элементов в формах */
+    div[data-testid="stForm"] * {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+    }
+    
+    /* Принудительные стили для всех элементов форм */
+    form input,
+    form textarea,
+    form select {
+        color: #000000 !important;
+        font-weight: 600 !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
