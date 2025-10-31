@@ -691,22 +691,45 @@ def main():
                                     st.warning("Станция удалена")
                                     safe_rerun()
                     else:
-                        st.markdown("**Информация (только для чтения)**")
-                        # render the same fields but disabled so user can view values
-                        station_form({
-                                "name": name,
-                                "location": location,
-                                "type": s_type,
-                                "frequency": frequency,
-                                "power": power,
-                                "status": status,
-                                "contact": contact,
-                                "notes": notes,
-                                "region": region,
-                                "pdf_file": pdf_file or "",
-                                "photo_file": photo_file or "",
-                        }, disabled=True, key_prefix=f"view_station_{station_id}")
-                        st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
+                        st.markdown("**Информация станции**")
+                        # Показать поля только для чтения (кроме примечаний)
+                        with st.form(f"readonly_station_{station_id}"):
+                            cols = st.columns(2)
+                            with cols[0]:
+                                st.text_input("Название станции", value=name, disabled=True, key=f"ro_name_{station_id}")
+                                st.text_input("Местоположение", value=location, disabled=True, key=f"ro_location_{station_id}")
+                                st.selectbox("Тип станции", ["Базовая", "Ретранслятор", "Спутниковая", "Мобильная"], 
+                                           index=["Базовая", "Ретранслятор", "Спутниковая", "Мобильная"].index(s_type) if s_type in ["Базовая", "Ретранслятор", "Спутниковая", "Мобильная"] else 0,
+                                           disabled=True, key=f"ro_type_{station_id}")
+                                st.text_input("Частота", value=frequency, disabled=True, key=f"ro_frequency_{station_id}")
+                                st.text_input("Мощность", value=power, disabled=True, key=f"ro_power_{station_id}")
+                            with cols[1]:
+                                st.selectbox("Статус", ["Активна", "Неактивна", "На обслуживании", "Резерв"],
+                                           index=["Активна", "Неактивна", "На обслуживании", "Резерв"].index(status) if status in ["Активна", "Неактивна", "На обслуживании", "Резерв"] else 0,
+                                           disabled=True, key=f"ro_status_{station_id}")
+                                st.selectbox("Регион", ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"],
+                                           index=["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"].index(region) if region in ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"] else 0,
+                                           disabled=True, key=f"ro_region_{station_id}")
+                                st.text_input("Контакт", value=contact, disabled=True, key=f"ro_contact_{station_id}")
+                            
+                            st.write("")
+                            st.markdown("**📝 Рабочие заметки** (можете писать свои отчеты и замечания)")
+                            # Поле примечаний - редактируемое для всех пользователей
+                            new_notes = st.text_area("Примечания", value=notes, disabled=False, key=f"editable_notes_{station_id}", 
+                                                    help="Здесь вы можете оставлять свои заметки, отчеты о работах, замечания по станции")
+                            
+                            # Кнопка сохранения только для примечаний
+                            save_notes = st.form_submit_button("💾 Сохранить заметки", help="Сохранить изменения в примечаниях")
+                        
+                        if save_notes:
+                            # Обновляем только поле примечаний, остальные поля остаются неизменными
+                            update_station(station_id, (
+                                name, location, s_type, frequency, power, status, contact, new_notes, region, pdf_file or "", photo_file or ""
+                            ))
+                            st.success("✅ Заметки сохранены! Администратор увидит ваши изменения.")
+                            safe_rerun()
+                        
+                        st.caption("📖 Информация станции доступна только для просмотра. Вы можете редактировать только примечания.")
         return
 
     # If we are here — page == 'Сотрудники'
