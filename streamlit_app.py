@@ -512,6 +512,32 @@ def main():
         font-weight: 600 !important;
         -webkit-text-fill-color: #000000 !important;
     }
+    
+    /* Специальные стили для поля примечаний - улучшенная видимость */
+    .stTextArea textarea,
+    textarea[aria-label*="Примечания"],
+    div[data-testid="stTextArea"] textarea {
+        background-color: #f8f9fa !important;
+        border: 2px solid #e9ecef !important;
+        border-radius: 8px !important;
+        color: #212529 !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        padding: 12px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        outline: none !important;
+        -webkit-text-fill-color: #212529 !important;
+    }
+    
+    /* При фокусе на поле примечаний */
+    .stTextArea textarea:focus,
+    textarea[aria-label*="Примечания"]:focus,
+    div[data-testid="stTextArea"] textarea:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        background-color: #ffffff !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
