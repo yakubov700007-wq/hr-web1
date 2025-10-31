@@ -861,7 +861,8 @@ def main():
                                     "power": power,
                                     "status": status,
                                     "contact": contact,
-                                    "notes": notes,
+                                    # По запросу: не предзаполнять поле "Примечания" в управлении станциями
+                                    "notes": "",
                                     "region": region,
                                     "pdf_file": pdf_file or "",
                                     "photo_file": photo_file or "",
@@ -910,7 +911,8 @@ def main():
                                 
                                 # Поле примечаний - редактируемое для всех пользователей (в правой колонке)
                                 st.markdown("**Рабочие заметки**")
-                                new_notes = st.text_area("Примечания", value=notes, disabled=False, key=f"editable_notes_{station_id}", 
+                                # По требованию: не показываем существующие примечания, оставляем поле пустым для ввода сотрудником
+                                new_notes = st.text_area("Примечания", value="", disabled=False, key=f"editable_notes_{station_id}", 
                                                         height=100, help="Вы можете оставлять свои заметки и отчеты")
                                 
                                 # Чекбокс обслуживания
