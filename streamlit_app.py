@@ -1123,61 +1123,7 @@ def main():
                         availability = round((active_stations / total_stations * 100), 1) if total_stations > 0 else 0
                         st.metric("Доступность", f"{availability}%")
                 
-                # Детальная таблица с toggle
-                with st.expander("📋 Детальная таблица станций", expanded=False):
-                    # Фильтр для отчетов
-                    col_filter1, col_filter2 = st.columns(2)
-                    with col_filter1:
-                        report_region = st.selectbox("Фильтр по региону", ["Все"] + ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], key="report_region")
-                    with col_filter2:
-                        report_status = st.selectbox("Фильтр по статусу", ["Все", "Активна", "Неактивна", "На обслуживании", "Резерв"], key="report_status")
-                    
-                    # Фильтруем данные для таблицы
-                    filtered_stations = []
-                    for station in all_stations:
-                        station_region = station[9] or ""
-                        station_status = station[6] or ""
-                        
-                        if report_region != "Все" and station_region != report_region:
-                            continue
-                        if report_status != "Все" and station_status != report_status:
-                            continue
-                            
-                        filtered_stations.append(station)
-                    
-                    # Показываем таблицу
-                    if filtered_stations:
-                        st.write(f"Найдено станций: {len(filtered_stations)}")
-                        
-                        # Создаем данные для таблицы
-                        table_data = []
-                        for station in filtered_stations:
-                            table_data.append({
-                                "Название": station[1],
-                                "Местоположение": station[2],
-                                "Тип": station[3],
-                                "Частота": station[4],
-                                "Статус": station[6],
-                                "Регион": station[9],
-                                "Контакт": station[7]
-                            })
-                        
-                        st.dataframe(table_data, use_container_width=True)
-                        
-                        # Кнопка экспорта (только для админов)
-                        if st.session_state.get("role") == "admin":
-                            if st.button("📥 Экспортировать в CSV"):
-                                import pandas as pd
-                                df = pd.DataFrame(table_data)
-                                csv = df.to_csv(index=False)
-                                st.download_button(
-                                    label="Скачать CSV файл",
-                                    data=csv,
-                                    file_name=f"stations_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                                    mime="text/csv"
-                                )
-                    else:
-                        st.info("Нет данных для выбранных фильтров")
+
                     
             else:
                 st.info("📭 Пока нет данных о базовых станциях")
