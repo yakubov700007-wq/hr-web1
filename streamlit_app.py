@@ -378,6 +378,69 @@ def main():
     require_auth()
 
     st.set_page_config(page_title="Сотрудники ПБК", layout="wide")
+    
+    # Улучшение читаемости текста в формах
+    st.markdown("""
+    <style>
+    /* Улучшение читаемости в полях ввода */
+    .stTextInput > div > div > input {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+    }
+    
+    .stTextArea > div > div > textarea {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+    }
+    
+    .stSelectbox > div > div > div {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Улучшение читаемости в disabled полях */
+    .stTextInput > div > div > input[disabled] {
+        color: #333333 !important;
+        background-color: #f8f9fa !important;
+        font-weight: 500 !important;
+        opacity: 1 !important;
+    }
+    
+    .stTextArea > div > div > textarea[disabled] {
+        color: #333333 !important;
+        background-color: #f8f9fa !important;
+        font-weight: 500 !important;
+        opacity: 1 !important;
+    }
+    
+    .stSelectbox > div > div > div[aria-disabled="true"] {
+        color: #333333 !important;
+        background-color: #f8f9fa !important;
+        font-weight: 500 !important;
+        opacity: 1 !important;
+    }
+    
+    /* Улучшение контрастности лейблов */
+    .stTextInput > label,
+    .stTextArea > label,
+    .stSelectbox > label {
+        color: #000000 !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
+    
+    /* Улучшение читаемости в expander */
+    .streamlit-expanderHeader {
+        font-weight: 600 !important;
+        color: #000000 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # show deployed version (git short sha) to help verify Cloud deploys
     def get_short_sha():
