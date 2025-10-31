@@ -927,8 +927,7 @@ def main():
                                 save_notes = st.form_submit_button("❏ Сохранить заметки", help="Сохранить изменения в примечаниях")
                             with col_save2:
                                 save_maintenance = st.form_submit_button("🔧 Отметить обслуживание", 
-                                                                       help="Сохранить информацию об обслуживании",
-                                                                       disabled=not (repaired_today or serviced_today))
+                                                                       help="Сохранить информацию об обслуживании")
                         
                         if save_notes:
                             # Обновляем только поле примечаний, остальные поля остаются неизменными
@@ -938,29 +937,37 @@ def main():
                             st.success("✅ Заметки сохранены! Администратор увидит ваши изменения.")
                             safe_rerun()
                         
-                        if save_maintenance and (repaired_today or serviced_today):
-                            # Определяем тип обслуживания
-                            maintenance_types = []
-                            if repaired_today:
-                                maintenance_types.append("repair")
-                            if serviced_today:
-                                maintenance_types.append("service")
-                            
-                            # Сохраняем каждый тип обслуживания как отдельную запись
-                            for mtype in maintenance_types:
-                                type_name = "Ремонт" if mtype == "repair" else "Обслуживание"
-                                user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
-                                
-                                add_maintenance_record(
-                                    station_id, 
-                                    mtype, 
-                                    "", 
-                                    f"Тип: {type_name}", 
-                                    user_name
-                                )
-                            
-                            st.success(f"✅ Обслуживание отмечено! Записано: {', '.join([('Ремонт' if t == 'repair' else 'Обслуживание') for t in maintenance_types])}")
-                            safe_rerun()
+                        if save_maintenance:
+                            if repaired_today or serviced_today:
+                                try:
+                                    # Определяем тип обслуживания
+                                    maintenance_types = []
+                                    if repaired_today:
+                                        maintenance_types.append("repair")
+                                    if serviced_today:
+                                        maintenance_types.append("service")
+                                    
+                                    # Сохраняем каждый тип обслуживания как отдельную запись
+                                    for mtype in maintenance_types:
+                                        type_name = "Ремонт" if mtype == "repair" else "Обслуживание"
+                                        user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
+                                        
+                                        add_maintenance_record(
+                                            station_id, 
+                                            mtype, 
+                                            "", 
+                                            f"Тип: {type_name}", 
+                                            user_name
+                                        )
+                                    
+                                    st.success(f"✅ Обслуживание отмечено! Записано: {', '.join([('Ремонт' if t == 'repair' else 'Обслуживание') for t in maintenance_types])}")
+                                    st.balloons()  # Визуальная обратная связь
+                                    safe_rerun()
+                                    
+                                except Exception as e:
+                                    st.error(f"❌ Ошибка при сохранении: {str(e)}")
+                            else:
+                                st.warning("⚠️ Выберите тип обслуживания (отремонтировано или обслужено)")
                         
                         st.caption("📖 Информация станции доступна только для просмотра. Вы можете редактировать только примечания.")
         
@@ -985,6 +992,14 @@ def main():
             st.write(f"🔍 Отладка: Ищем записи за {date_str}")
             all_maintenance_records = get_maintenance_records()
             st.write(f"📊 Всего записей в базе: {len(all_maintenance_records)}")
+            
+            # Показываем последние 3 записи для отладки
+            if all_maintenance_records:
+                st.write("🔍 Последние записи:")
+                for i, record in enumerate(all_maintenance_records[:3]):
+                    st.write(f"  {i+1}. {record[8]} | {record[2]} | {record[3]} | {record[7]}")
+            else:
+                st.write("❌ Нет записей в таблице обслуживания")
             
             # Показываем статистику обслуживания
             if maintenance_stats['total_maintained'] > 0:
