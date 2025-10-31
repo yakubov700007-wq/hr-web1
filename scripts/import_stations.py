@@ -195,6 +195,7 @@ if __name__ == "__main__":
             'чирчик': 'ВМКБ', 
             'ангрен': 'РУХО',
             'алмалык': 'РУСО',
+            'душанбе': 'Душанбе',
         }
         
         import_stations_from_csv(csv_file, region_mapping)

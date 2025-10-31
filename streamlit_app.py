@@ -318,7 +318,7 @@ def employee_form(defaults=None, disabled: bool = False, key_prefix: str | None 
         last_name = st.text_input("Фамилия", value=defaults.get("last_name", ""), disabled=disabled, key=f"{kp}_last_name")
         first_name = st.text_input("Имя", value=defaults.get("first_name", ""), disabled=disabled, key=f"{kp}_first_name")
         nasab = st.text_input("Отчество", value=defaults.get("nasab", ""), disabled=disabled, key=f"{kp}_nasab")
-        regions = ["РРП", "ВМКБ", "РУХО", "РУСО"]
+        regions = ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"]
         default_makon = defaults.get("makon")
         idx = 0 if default_makon not in regions else regions.index(default_makon)
         makon = st.selectbox("Регион", regions, index=idx, disabled=disabled, key=f"{kp}_makon")
@@ -359,7 +359,7 @@ def station_form(defaults=None, disabled: bool = False, key_prefix: str | None =
         default_status = defaults.get("status")
         status_idx = 0 if default_status not in statuses else statuses.index(default_status)
         status = st.selectbox("Статус", statuses, index=status_idx, disabled=disabled, key=f"{kp}_status")
-        regions = ["РРП", "ВМКБ", "РУХО", "РУСО"]
+        regions = ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"]
         default_region = defaults.get("region")
         region_idx = 0 if default_region not in regions else regions.index(default_region)
         region = st.selectbox("Регион", regions, index=region_idx, disabled=disabled, key=f"{kp}_region")
@@ -489,7 +489,7 @@ def main():
 
         # Sidebar filters/actions for stations  
         st.sidebar.header("Фильтр")
-        region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
+        region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=0)
         search = st.sidebar.text_input("Поиск")
         st.sidebar.divider()
         
@@ -611,7 +611,7 @@ def main():
     
     # Sidebar filters/actions for employees
     st.sidebar.header("Фильтр")
-    region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
+    region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=0)
     search = st.sidebar.text_input("Поиск")
     st.sidebar.divider()
     # only admins can add
