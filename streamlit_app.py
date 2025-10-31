@@ -947,6 +947,11 @@ def main():
                 date_str = report_date.strftime("%Y-%m-%d")
                 maintenance_stats = get_maintenance_stats(date_str)
             
+            # Отладочная информация (временно)
+            st.write(f"🔍 Отладка: Ищем записи за {date_str}")
+            all_maintenance_records = get_maintenance_records()
+            st.write(f"📊 Всего записей в базе: {len(all_maintenance_records)}")
+            
             # Показываем статистику обслуживания
             if maintenance_stats['total_maintained'] > 0:
                 col_stat1, col_stat2, col_stat3 = st.columns(3)
