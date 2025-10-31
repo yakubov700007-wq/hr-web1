@@ -727,7 +727,7 @@ def main():
                                 st.text_input("Контакт", value=contact, disabled=True, key=f"ro_contact_{station_id}")
                                 
                                 # Поле примечаний - редактируемое для всех пользователей (в правой колонке)
-                                st.markdown("**� Рабочие заметки**")
+                                st.markdown("**Рабочие заметки**")
                                 new_notes = st.text_area("Примечания", value=notes, disabled=False, key=f"editable_notes_{station_id}", 
                                                         height=100, help="Вы можете оставлять свои заметки и отчеты")
                                 
