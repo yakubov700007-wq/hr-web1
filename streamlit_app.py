@@ -8,6 +8,7 @@ from io import BytesIO
 
 import streamlit as st
 from PIL import Image
+import pandas as pd
 
 # Helper: safe rerun that falls back to st.stop() if experimental_rerun is unavailable
 def safe_rerun():
@@ -658,15 +659,19 @@ def main():
     elif page == "⌁ Базовые станции":
         st.header("Базовые станции")
         
-        # Show view-only info for non-admin users
-        if st.session_state.get("role") != "admin":
-            st.info("👁️ Режим только для просмотра - добавление и удаление недоступно")
+        # Вкладки внутри страницы базовых станций
+        tab1, tab2 = st.tabs(["🏛️ Управление станциями", "📊 Отчеты"])
+        
+        with tab1:
+            # Show view-only info for non-admin users
+            if st.session_state.get("role") != "admin":
+                st.info("👁️ Режим только для просмотра - добавление и удаление недоступно")
 
-        # Sidebar filters/actions for stations  
-        st.sidebar.header("Фильтр")
-        region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=0)
-        search = st.sidebar.text_input("Поиск")
-        st.sidebar.divider()
+            # Sidebar filters/actions for stations  
+            st.sidebar.header("Фильтр")
+            region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=0)
+            search = st.sidebar.text_input("Поиск")
+            st.sidebar.divider()
         
         # Determine add mode from sidebar toggle only
         if st.session_state.get("role") == "admin":
@@ -782,6 +787,132 @@ def main():
                             safe_rerun()
                         
                         st.caption("📖 Информация станции доступна только для просмотра. Вы можете редактировать только примечания.")
+        
+        with tab2:
+            st.subheader("📊 Отчеты по базовым станциям")
+            
+            # Получаем все станции для статистики
+            all_stations = fetch_stations()
+            
+            if all_stations:
+                # Статистика по регионам
+                st.markdown("### 🗺️ Статистика по регионам")
+                region_stats = {}
+                for station in all_stations:
+                    region = station[9] or "Неизвестно"  # region field
+                    region_stats[region] = region_stats.get(region, 0) + 1
+                
+                cols = st.columns(len(region_stats))
+                for i, (region, count) in enumerate(region_stats.items()):
+                    with cols[i]:
+                        st.metric(region, count)
+                
+                # Статистика по типам станций
+                st.markdown("### 🏗️ Статистика по типам станций")
+                type_stats = {}
+                for station in all_stations:
+                    station_type = station[3] or "Неизвестно"  # type field
+                    type_stats[station_type] = type_stats.get(station_type, 0) + 1
+                
+                cols_type = st.columns(len(type_stats))
+                for i, (s_type, count) in enumerate(type_stats.items()):
+                    with cols_type[i]:
+                        st.metric(s_type, count)
+                
+                # Статистика по статусам
+                st.markdown("### ⚡ Статистика по статусам")
+                status_stats = {}
+                for station in all_stations:
+                    status = station[6] or "Неизвестно"  # status field
+                    status_stats[status] = status_stats.get(status, 0) + 1
+                
+                cols_status = st.columns(len(status_stats))
+                for i, (status, count) in enumerate(status_stats.items()):
+                    with cols_status[i]:
+                        # Цветовая индикация статусов
+                        if status == "Активна":
+                            st.metric(f"🟢 {status}", count)
+                        elif status == "Неактивна":
+                            st.metric(f"🔴 {status}", count)
+                        elif status == "На обслуживании":
+                            st.metric(f"🟡 {status}", count)
+                        else:
+                            st.metric(status, count)
+                
+                # Общая статистика
+                st.markdown("### 📈 Общая информация")
+                total_stations = len(all_stations)
+                active_stations = len([s for s in all_stations if s[6] == "Активна"])
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Всего станций", total_stations)
+                with col2:
+                    st.metric("Активных станций", active_stations)
+                with col3:
+                    availability = round((active_stations / total_stations * 100), 1) if total_stations > 0 else 0
+                    st.metric("Доступность", f"{availability}%")
+                
+                # Детальная таблица
+                st.markdown("### 📋 Детальная таблица станций")
+                
+                # Фильтр для отчетов
+                col_filter1, col_filter2 = st.columns(2)
+                with col_filter1:
+                    report_region = st.selectbox("Фильтр по региону", ["Все"] + ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], key="report_region")
+                with col_filter2:
+                    report_status = st.selectbox("Фильтр по статусу", ["Все", "Активна", "Неактивна", "На обслуживании", "Резерв"], key="report_status")
+                
+                # Фильтруем данные для таблицы
+                filtered_stations = []
+                for station in all_stations:
+                    station_region = station[9] or ""
+                    station_status = station[6] or ""
+                    
+                    if report_region != "Все" and station_region != report_region:
+                        continue
+                    if report_status != "Все" and station_status != report_status:
+                        continue
+                        
+                    filtered_stations.append(station)
+                
+                # Показываем таблицу
+                if filtered_stations:
+                    st.write(f"Найдено станций: {len(filtered_stations)}")
+                    
+                    # Создаем данные для таблицы
+                    table_data = []
+                    for station in filtered_stations:
+                        table_data.append({
+                            "Название": station[1],
+                            "Местоположение": station[2],
+                            "Тип": station[3],
+                            "Частота": station[4],
+                            "Статус": station[6],
+                            "Регион": station[9],
+                            "Контакт": station[7]
+                        })
+                    
+                    st.dataframe(table_data, use_container_width=True)
+                    
+                    # Кнопка экспорта (только для админов)
+                    if st.session_state.get("role") == "admin":
+                        if st.button("📥 Экспортировать в CSV"):
+                            import pandas as pd
+                            df = pd.DataFrame(table_data)
+                            csv = df.to_csv(index=False)
+                            st.download_button(
+                                label="Скачать CSV файл",
+                                data=csv,
+                                file_name=f"stations_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv"
+                            )
+                else:
+                    st.info("Нет данных для выбранных фильтров")
+                    
+            else:
+                st.info("📭 Пока нет данных о базовых станциях")
+                
         return
 
     # If we are here — page == 'Сотрудники'
