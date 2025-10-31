@@ -391,7 +391,9 @@ def main():
         background-color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 15px !important;
-        border: 1px solid #cccccc !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -403,7 +405,9 @@ def main():
         background-color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 15px !important;
-        border: 1px solid #cccccc !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -415,6 +419,9 @@ def main():
         background-color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 15px !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -428,7 +435,9 @@ def main():
         font-weight: 600 !important;
         font-size: 15px !important;
         opacity: 1 !important;
-        border: 1px solid #d0d0d0 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -441,7 +450,9 @@ def main():
         font-weight: 600 !important;
         font-size: 15px !important;
         opacity: 1 !important;
-        border: 1px solid #d0d0d0 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
@@ -454,6 +465,9 @@ def main():
         font-weight: 600 !important;
         font-size: 15px !important;
         opacity: 1 !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         text-shadow: none !important;
         -webkit-text-fill-color: #000000 !important;
     }
