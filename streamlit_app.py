@@ -1064,7 +1064,11 @@ def main():
                             # Показываем примечания станции (детали работ и запчасти)
                             if station_notes and station_notes.strip():
                                 st.markdown("**💡 Детали работ и запчасти:**")
-                                st.text_area("", value=station_notes, height=100, disabled=True, key=f"notes_display_{record_id}")
+                                # Компактное отображение как в обычных станциях
+                                if len(station_notes) > 60:
+                                    st.text_area("", value=station_notes, height=60, disabled=True, key=f"notes_display_{record_id}")
+                                else:
+                                    st.text_input("", value=station_notes, disabled=True, key=f"notes_display_{record_id}")
                             else:
                                 st.caption("💡 Примечания к станции не указаны")
                 else:
