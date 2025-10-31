@@ -531,27 +531,8 @@ def main():
                 ) = row
                 
                 with st.expander(f"{name} — {location}", expanded=False):
-                    st.markdown("**Информация о станции**")
-                    info_cols = st.columns(2)
-                    with info_cols[0]:
-                        st.text(f"Тип: {s_type}")
-                        st.text(f"Частота: {frequency}")
-                        st.text(f"Мощность: {power}")
-                    with info_cols[1]:
-                        st.text(f"Статус: {status}")
-                        st.text(f"Регион: {region}")
-                        st.text(f"Контакт: {contact}")
-                        if notes:
-                            st.text(f"Примечания: {notes}")
-                        abs_pdf = get_abs_path(pdf_file)
-                        if pdf_file and os.path.isfile(abs_pdf):
-                            st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"station_dl_{station_id}")
-                        else:
-                            st.caption("PDF не прикреплён")
-
-                        st.divider()
-                        # Edit block: only admins may edit/delete. Viewers see read-only fields.
-                        if st.session_state.get("role") == "admin":
+                    # Edit block: only admins may edit/delete. Viewers see read-only fields.
+                    if st.session_state.get("role") == "admin":
                             st.markdown("**Редактировать станцию**")
                             with st.form(f"edit_station_{station_id}"):
                                 vals = station_form({
@@ -587,10 +568,10 @@ def main():
                                     delete_station(station_id)
                                     st.warning("Станция удалена")
                                     safe_rerun()
-                        else:
-                            st.markdown("**Информация (только для чтения)**")
-                            # render the same fields but disabled so user can view values
-                            station_form({
+                    else:
+                        st.markdown("**Информация (только для чтения)**")
+                        # render the same fields but disabled so user can view values
+                        station_form({
                                 "name": name,
                                 "location": location,
                                 "type": s_type,
@@ -602,8 +583,8 @@ def main():
                                 "region": region,
                                 "pdf_file": pdf_file or "",
                                 "photo_file": photo_file or "",
-                            }, disabled=True, key_prefix=f"view_station_{station_id}")
-                            st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
+                        }, disabled=True, key_prefix=f"view_station_{station_id}")
+                        st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
         return
 
     # If we are here — page == 'Сотрудники'
