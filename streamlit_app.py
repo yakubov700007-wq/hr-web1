@@ -607,6 +607,8 @@ def main():
         return
 
     # If we are here — page == 'Сотрудники'
+    st.title("Сотрудники ПБК")
+    
     # Sidebar filters/actions for employees
     st.sidebar.header("Фильтр")
     region = st.sidebar.selectbox("Регион", ["Все", "РРП", "ВМКБ", "РУХО", "РУСО"], index=0)
