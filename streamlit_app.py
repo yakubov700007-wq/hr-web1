@@ -378,7 +378,6 @@ def main():
     require_auth()
 
     st.set_page_config(page_title="Сотрудники ПБК", layout="wide")
-    st.title("Сотрудники ПБК")
 
     # show deployed version (git short sha) to help verify Cloud deploys
     def get_short_sha():
