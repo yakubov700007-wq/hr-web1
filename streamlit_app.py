@@ -514,30 +514,42 @@ def main():
         -webkit-text-fill-color: #000000 !important;
     }
     
-    /* Специальные стили для поля примечаний - улучшенная видимость */
+    /* Специальные стили для поля примечаний - МАКСИМАЛЬНАЯ видимость */
     .stTextArea textarea,
     textarea[aria-label*="Примечания"],
     div[data-testid="stTextArea"] textarea {
-        background-color: #f8f9fa !important;
-        border: 2px solid #dc3545 !important;
-        border-radius: 8px !important;
-        color: #212529 !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
-        line-height: 1.5 !important;
-        padding: 12px !important;
-        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
+        background-color: #fff5f5 !important;
+        border: 4px solid #e53e3e !important;
+        border-radius: 12px !important;
+        color: #1a202c !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        line-height: 1.6 !important;
+        padding: 16px !important;
+        box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3), 0 0 0 1px rgba(229, 62, 62, 0.1) !important;
         outline: none !important;
-        -webkit-text-fill-color: #212529 !important;
+        -webkit-text-fill-color: #1a202c !important;
+        min-height: 120px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    /* Дополнительное выделение контейнера поля примечаний */
+    div[data-testid="stTextArea"] {
+        background-color: #fff5f5 !important;
+        border: 2px dashed #e53e3e !important;
+        border-radius: 16px !important;
+        padding: 8px !important;
+        margin: 8px 0 !important;
     }
     
     /* При фокусе на поле примечаний */
     .stTextArea textarea:focus,
     textarea[aria-label*="Примечания"]:focus,
     div[data-testid="stTextArea"] textarea:focus {
-        border-color: #007bff !important;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        border-color: #c53030 !important;
+        box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.4), 0 4px 16px rgba(229, 62, 62, 0.4) !important;
         background-color: #ffffff !important;
+        transform: scale(1.02) !important;
     }
     </style>
     """, unsafe_allow_html=True)
