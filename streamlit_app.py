@@ -913,12 +913,11 @@ def main():
                                 new_notes = st.text_area("Примечания", value=notes, disabled=False, key=f"editable_notes_{station_id}", 
                                                         height=100, help="Вы можете оставлять свои заметки и отчеты")
                                 
-                                # Чекбоксы обслуживания
+                                # Чекбокс обслуживания
                                 st.markdown("**🔧 Сегодняшнее обслуживание**")
-                                repaired_today = st.checkbox("🔨 Отремонтировано сегодня", key=f"repair_{station_id}")
                                 serviced_today = st.checkbox("⚙️ Обслужено сегодня", key=f"service_{station_id}")
                                 
-                                if repaired_today or serviced_today:
+                                if serviced_today:
                                     st.caption("💡 Детали работ и замененные запчасти указывайте в примечаниях выше")
                                 
                             # Кнопки сохранения
@@ -938,36 +937,27 @@ def main():
                             safe_rerun()
                         
                         if save_maintenance:
-                            if repaired_today or serviced_today:
+                            if serviced_today:
                                 try:
-                                    # Определяем тип обслуживания
-                                    maintenance_types = []
-                                    if repaired_today:
-                                        maintenance_types.append("repair")
-                                    if serviced_today:
-                                        maintenance_types.append("service")
+                                    type_name = "Обслуживание"
+                                    user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
                                     
-                                    # Сохраняем каждый тип обслуживания как отдельную запись
-                                    for mtype in maintenance_types:
-                                        type_name = "Ремонт" if mtype == "repair" else "Обслуживание"
-                                        user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
-                                        
-                                        add_maintenance_record(
-                                            station_id, 
-                                            mtype, 
-                                            "", 
-                                            f"Тип: {type_name}", 
-                                            user_name
-                                        )
+                                    add_maintenance_record(
+                                        station_id, 
+                                        "service", 
+                                        "", 
+                                        f"Тип: {type_name}", 
+                                        user_name
+                                    )
                                     
-                                    st.success(f"✅ Обслуживание отмечено! Записано: {', '.join([('Ремонт' if t == 'repair' else 'Обслуживание') for t in maintenance_types])}")
+                                    st.success("✅ Обслуживание отмечено!")
                                     st.balloons()  # Визуальная обратная связь
                                     safe_rerun()
                                     
                                 except Exception as e:
                                     st.error(f"❌ Ошибка при сохранении: {str(e)}")
                             else:
-                                st.warning("⚠️ Выберите тип обслуживания (отремонтировано или обслужено)")
+                                st.warning("⚠️ Поставьте галочку 'Обслужено сегодня'")
                         
                         st.caption("📖 Информация станции доступна только для просмотра. Вы можете редактировать только примечания.")
         
@@ -1003,13 +993,11 @@ def main():
             
             # Показываем статистику обслуживания
             if maintenance_stats['total_maintained'] > 0:
-                col_stat1, col_stat2, col_stat3 = st.columns(3)
+                col_stat1, col_stat2 = st.columns(2)
                 
                 with col_stat1:
                     st.metric("🔧 Всего обслужено", maintenance_stats['total_maintained'])
                 with col_stat2:
-                    st.metric("🔨 Отремонтировано", maintenance_stats['repairs'])
-                with col_stat3:
                     st.metric("⚙️ Обслужено", maintenance_stats['services'])
                 
                 # Статистика по регионам
@@ -1028,11 +1016,7 @@ def main():
                         for i, (region, total, repairs, services) in enumerate(region_stats):
                             with cols_regions[i % 5]:
                                 st.markdown(f"**📍 {region}**")
-                                col_r1, col_r2 = st.columns(2)
-                                with col_r1:
-                                    st.metric("🔨", repairs, help="Отремонтировано")
-                                with col_r2:
-                                    st.metric("⚙️", services, help="Обслужено")
+                                st.metric("⚙️", services, help="Обслужено")
                                 st.metric("Всего", total, help="Общее количество станций")
                 else:
                     st.info("Нет данных об обслуживании по регионам за выбранную дату")
@@ -1045,8 +1029,8 @@ def main():
                     for record in maintenance_records:
                         record_id, station_id, maint_date, maint_type, parts, notes, user_name, created_at, station_name, region, station_notes = record
                         
-                        type_icon = "🔨" if maint_type == "repair" else "⚙️"
-                        type_name = "Ремонт" if maint_type == "repair" else "Обслуживание"
+                        type_icon = "⚙️"
+                        type_name = "Обслуживание"
                         
                         with st.expander(f"{type_icon} {station_name} ({region}) - {type_name}", expanded=False):
                             col_info1, col_info2 = st.columns(2)
