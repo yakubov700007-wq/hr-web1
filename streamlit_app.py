@@ -1000,26 +1000,26 @@ def main():
                 with col_stat2:
                     st.metric("⚙️ Обслужено", maintenance_stats['services'])
                 
-                # Статистика по регионам
-                st.markdown("#### 🗺️ Статистика по регионам")
-                region_stats = get_maintenance_stats_by_region(date_str, report_region_filter)
-                
-                if region_stats:
-                    if report_region_filter != "Все":
-                        st.caption(f"Показаны данные только для региона: **{report_region_filter}**")
+                # Статистика по регионам с toggle
+                with st.expander("🗺️ Статистика по регионам", expanded=False):
+                    region_stats = get_maintenance_stats_by_region(date_str, report_region_filter)
                     
-                    # Создаем колонки для каждого региона
-                    num_regions = len(region_stats)
-                    if num_regions > 0:
-                        cols_regions = st.columns(min(num_regions, 5))  # Максимум 5 колонок
+                    if region_stats:
+                        if report_region_filter != "Все":
+                            st.caption(f"Показаны данные только для региона: **{report_region_filter}**")
                         
-                        for i, (region, total, repairs, services) in enumerate(region_stats):
-                            with cols_regions[i % 5]:
-                                st.markdown(f"**📍 {region}**")
-                                st.metric("⚙️", services, help="Обслужено")
-                                st.metric("Всего", total, help="Общее количество станций")
-                else:
-                    st.info("Нет данных об обслуживании по регионам за выбранную дату")
+                        # Создаем колонки для каждого региона
+                        num_regions = len(region_stats)
+                        if num_regions > 0:
+                            cols_regions = st.columns(min(num_regions, 5))  # Максимум 5 колонок
+                            
+                            for i, (region, total, repairs, services) in enumerate(region_stats):
+                                with cols_regions[i % 5]:
+                                    st.markdown(f"**📍 {region}**")
+                                    st.metric("⚙️", services, help="Обслужено")
+                                    st.metric("Всего", total, help="Общее количество станций")
+                    else:
+                        st.info("Нет данных об обслуживании по регионам за выбранную дату")
                 
                 # Детальная информация по обслуживанию
                 st.markdown(f"#### 📋 Детали обслуживания за {date_str}")
@@ -1065,17 +1065,17 @@ def main():
             all_stations = fetch_stations()
             
             if all_stations:
-                # Статистика по регионам
-                st.markdown("### 🗺️ Статистика по регионам")
-                region_stats = {}
-                for station in all_stations:
-                    region = station[9] or "Неизвестно"  # region field
-                    region_stats[region] = region_stats.get(region, 0) + 1
-                
-                cols = st.columns(len(region_stats))
-                for i, (region, count) in enumerate(region_stats.items()):
-                    with cols[i]:
-                        st.metric(region, count)
+                # Статистика по регионам с toggle
+                with st.expander("🗺️ Статистика по регионам", expanded=False):
+                    region_stats = {}
+                    for station in all_stations:
+                        region = station[9] or "Неизвестно"  # region field
+                        region_stats[region] = region_stats.get(region, 0) + 1
+                    
+                    cols = st.columns(len(region_stats))
+                    for i, (region, count) in enumerate(region_stats.items()):
+                        with cols[i]:
+                            st.metric(region, count)
                 
                 # Статистика по типам станций
                 st.markdown("### 🏗️ Статистика по типам станций")
