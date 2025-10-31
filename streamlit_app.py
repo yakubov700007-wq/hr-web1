@@ -882,11 +882,13 @@ def main():
                                     serviced_today = st.checkbox("⚙️ Обслужено сегодня", key=f"service_{station_id}")
                                 
                                 with col_maint2:
-                                    if repaired_today or serviced_today:
-                                        parts_replaced = st.text_input("Замененные запчасти", key=f"parts_{station_id}", 
-                                                                     help="Укажите какие запчасти заменяли")
-                                        maintenance_notes = st.text_area("Детали работ", key=f"maint_notes_{station_id}", 
-                                                                        height=60, help="Подробности обслуживания/ремонта")
+                                    # Всегда показываем поля, но делаем их активными только при выборе чекбокса
+                                    parts_replaced = st.text_input("Замененные запчасти", key=f"parts_{station_id}", 
+                                                                 help="Укажите какие запчасти заменяли",
+                                                                 disabled=not (repaired_today or serviced_today))
+                                    maintenance_notes = st.text_area("Детали работ", key=f"maint_notes_{station_id}", 
+                                                                    height=60, help="Подробности обслуживания/ремонта",
+                                                                    disabled=not (repaired_today or serviced_today))
                                 
                             # Кнопки сохранения
                             col_save1, col_save2 = st.columns(2)
@@ -918,18 +920,11 @@ def main():
                                 type_name = "Ремонт" if mtype == "repair" else "Обслуживание"
                                 user_name = f"Пользователь ({st.session_state.get('role', 'неизвестно')})"
                                 
-                                # Формируем текст с деталями
-                                maintenance_detail = f"{type_name}"
-                                if 'parts_replaced' in locals() and parts_replaced:
-                                    maintenance_detail += f" | Запчасти: {parts_replaced}"
-                                if 'maintenance_notes' in locals() and maintenance_notes:
-                                    maintenance_detail += f" | Детали: {maintenance_notes}"
-                                
                                 add_maintenance_record(
                                     station_id, 
                                     mtype, 
-                                    parts_replaced if 'parts_replaced' in locals() else "", 
-                                    maintenance_notes if 'maintenance_notes' in locals() else "", 
+                                    parts_replaced or "", 
+                                    maintenance_notes or "", 
                                     user_name
                                 )
                             
