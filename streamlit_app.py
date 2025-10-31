@@ -518,14 +518,14 @@ def main():
     textarea[aria-label*="Примечания"],
     div[data-testid="stTextArea"] textarea {
         background-color: #f8f9fa !important;
-        border: 2px solid #e9ecef !important;
+        border: 2px solid #dc3545 !important;
         border-radius: 8px !important;
         color: #212529 !important;
         font-weight: 500 !important;
         font-size: 14px !important;
         line-height: 1.5 !important;
         padding: 12px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
         outline: none !important;
         -webkit-text-fill-color: #212529 !important;
     }
