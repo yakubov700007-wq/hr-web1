@@ -702,18 +702,18 @@ def main():
     /* Увеличение шрифта только для списка сотрудников (перекрывает глобальные правила) */
     #employees_list .streamlit-expanderHeader,
     #employees_list .streamlit-expanderHeader p {
-        /* Компактные, вертикально центрированные заголовки сотрудников */
-        font-size: 56px !important;
+        /* Ещё более компактные заголовки и увеличенный шрифт */
+        font-size: 64px !important; /* увеличили */
         font-weight: 900 !important; /* жирный текст */
         color: #000000 !important;
         line-height: 1.0 !important;
-        padding: 6px 12px !important; /* уменьшили высоту вкладки */
+        padding: 2px 8px !important; /* минимальный вертикальный отступ */
         display: flex !important;
         align-items: center !important; /* выровнять по центру по вертикали */
         white-space: nowrap !important; /* одна строка */
         overflow: hidden !important;
         text-overflow: ellipsis !important; /* троеточие при переполнении */
-        max-height: 68px !important; /* верхняя граница высоты */
+        max-height: 56px !important; /* немного уменьшили высоту контейнера */
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     }
     /* Адаптивность: на узких экранах уменьшаем размер, чтобы не ломать верстку */
