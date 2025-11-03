@@ -630,12 +630,13 @@ def main():
         text-shadow: none !important;
     }
     
-    /* Заголовки expander */
+    /* Заголовки expander (увеличенные для читабельности) */
     .streamlit-expanderHeader,
     .streamlit-expanderHeader p {
         font-weight: 700 !important;
         color: #000000 !important;
-        font-size: 18px !important;
+        font-size: 22px !important;
+        line-height: 1.1 !important;
     }
     
     /* Дополнительные стили для всех текстовых элементов в формах */
@@ -689,6 +690,13 @@ def main():
         box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.4), 0 4px 16px rgba(229, 62, 62, 0.4) !important;
         background-color: #ffffff !important;
         transform: scale(1.02) !important;
+    }
+    /* Крупные подписи/caption, чтобы номера/имена были легко читаемы */
+    div[data-testid="stCaptionContainer"] p,
+    .stCaption {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
