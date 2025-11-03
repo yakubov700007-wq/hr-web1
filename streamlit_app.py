@@ -530,7 +530,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -544,7 +544,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -558,7 +558,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -573,7 +573,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -588,7 +588,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -603,7 +603,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -626,7 +626,7 @@ def main():
     label {
         color: #000000 !important;
         font-weight: 700 !important;
-    font-size: 20px !important;
+        font-size: 17px !important;
         text-shadow: none !important;
     }
     
@@ -663,7 +663,7 @@ def main():
         border-radius: 12px !important;
         color: #1a202c !important;
         font-weight: 600 !important;
-        font-size: 26px !important;
+        font-size: 16px !important;
         line-height: 1.6 !important;
         padding: 16px !important;
         box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3), 0 0 0 1px rgba(229, 62, 62, 0.1) !important;
@@ -694,8 +694,8 @@ def main():
     /* Крупные подписи/caption, чтобы номера/имена были легко читаемы */
     div[data-testid="stCaptionContainer"] p,
     .stCaption {
-        font-size: 22px !important;
-        font-weight: 800 !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
         color: #000000 !important;
     }
     </style>
