@@ -530,7 +530,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -544,7 +544,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -558,7 +558,7 @@ def main():
         color: #000000 !important;
         background-color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -573,7 +573,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -588,7 +588,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -603,7 +603,7 @@ def main():
         color: #000000 !important;
         background-color: #f0f2f6 !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         opacity: 1 !important;
         border: none !important;
         outline: none !important;
@@ -626,7 +626,7 @@ def main():
     label {
         color: #000000 !important;
         font-weight: 700 !important;
-        font-size: 15px !important;
+        font-size: 17px !important;
         text-shadow: none !important;
     }
     
@@ -635,7 +635,7 @@ def main():
     .streamlit-expanderHeader p {
         font-weight: 700 !important;
         color: #000000 !important;
-        font-size: 16px !important;
+        font-size: 18px !important;
     }
     
     /* Дополнительные стили для всех текстовых элементов в формах */
