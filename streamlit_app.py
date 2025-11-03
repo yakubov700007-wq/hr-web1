@@ -700,28 +700,28 @@ def main():
     }
 
     /* Увеличение шрифта только для списка сотрудников (перекрывает глобальные правила) */
+    /* Сделано более компактно: меньший font-size, минимальные отступы и жёсткий max-height */
     #employees_list .streamlit-expanderHeader,
     #employees_list .streamlit-expanderHeader p {
-        /* Ещё более компактные заголовки и увеличенный шрифт */
-        font-size: 64px !important; /* увеличили */
+        font-size: 48px !important; /* уменьшили для компактности */
         font-weight: 900 !important; /* жирный текст */
         color: #000000 !important;
         line-height: 1.0 !important;
-        padding: 2px 8px !important; /* минимальный вертикальный отступ */
+        padding: 0 8px !important; /* почти нет вертикального отступа */
         display: flex !important;
         align-items: center !important; /* выровнять по центру по вертикали */
         white-space: nowrap !important; /* одна строка */
         overflow: hidden !important;
         text-overflow: ellipsis !important; /* троеточие при переполнении */
-        max-height: 56px !important; /* немного уменьшили высоту контейнера */
+        max-height: 44px !important; /* ещё меньше высота */
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     }
     /* Адаптивность: на узких экранах уменьшаем размер, чтобы не ломать верстку */
     @media (max-width: 720px) {
         #employees_list .streamlit-expanderHeader,
         #employees_list .streamlit-expanderHeader p {
-            font-size: 32px !important;
-            padding: 10px 12px !important;
+            font-size: 26px !important; /* мобильный размер */
+            padding: 8px 10px !important;
         }
     }
     /* Компактное содержимое раскрытой вкладки сотрудников */
