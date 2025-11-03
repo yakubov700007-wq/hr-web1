@@ -1259,27 +1259,40 @@ def main():
                 # Оставляем только блок "Информация (только для чтения)" и показываем PDF внутри него
                 st.markdown("**Информация (только для чтения)**")
 
-                # Показываем поля как disabled форму (единый вид для всех ролей)
-                employee_form({
-                    "rakami_tabel": rakami_tabel,
-                    "last_name": last_name,
-                    "first_name": first_name,
-                    "nasab": nasab,
-                    "makon": makon,
-                    "sanai_kabul": sanai_kabul,
-                    "vazifa": vazifa,
-                    "phone": phone,
-                    "dog_no": dog_no,
-                    "pdf_file": pdf_file or "",
-                    "photo_file": photo_file or "",
-                }, disabled=True, key_prefix=f"view_{emp_id}")
+                # Рендерим информацию в двух колонках: поля слева и фото справа (пустая рамка если фото отсутствует)
+                cols_main = st.columns([3, 1])
+                with cols_main[0]:
+                    cols_left = st.columns(2)
+                    with cols_left[0]:
+                        st.text_input("Табельный №", value=rakami_tabel, disabled=True, key=f"view_{emp_id}_rakami_tabel")
+                        st.text_input("Фамилия", value=last_name, disabled=True, key=f"view_{emp_id}_last_name")
+                        st.text_input("Имя", value=first_name, disabled=True, key=f"view_{emp_id}_first_name")
+                        st.text_input("Отчество", value=nasab, disabled=True, key=f"view_{emp_id}_nasab")
+                        st.selectbox("Регион", ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"].index(makon) if makon in ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"] else 0, disabled=True, key=f"view_{emp_id}_makon")
+                        st.text_input("Дата приёма", value=sanai_kabul, disabled=True, key=f"view_{emp_id}_sanai_kabul")
+                    with cols_left[1]:
+                        st.text_input("Должность", value=vazifa, disabled=True, key=f"view_{emp_id}_vazifa")
+                        st.text_input("Телефон", value=phone, disabled=True, key=f"view_{emp_id}_phone")
+                        st.text_input("Дог №", value=dog_no, disabled=True, key=f"view_{emp_id}_dog_no")
 
-                # PDF: показать кнопку скачивания если есть, иначе пометку
-                abs_pdf = get_abs_path(pdf_file)
-                if pdf_file and os.path.isfile(abs_pdf):
-                    st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
-                else:
-                    st.caption("PDF не прикреплён")
+                    # PDF: показать кнопку скачивания если есть, иначе пометку
+                    abs_pdf = get_abs_path(pdf_file)
+                    if pdf_file and os.path.isfile(abs_pdf):
+                        st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
+                    else:
+                        st.caption("PDF не прикреплён")
+
+                with cols_main[1]:
+                    # Отобразить фото если есть, иначе показать пустую рамку с подписью
+                    abs_photo = get_abs_path(photo_file)
+                    if photo_file and os.path.isfile(abs_photo):
+                        try:
+                            st.image(Image.open(abs_photo), use_column_width=True, caption=None)
+                        except Exception:
+                            st.markdown('<div style="width:160px;height:160px;border:2px solid #e53e3e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-weight:600">Нет фото</div>', unsafe_allow_html=True)
+                    else:
+                        # placeholder box with red border (keeps layout)
+                        st.markdown('<div style="width:160px;height:160px;border:2px solid #e53e3e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-weight:600">Нет фото</div>', unsafe_allow_html=True)
 
         # Закрываем контейнер списка сотрудников
         st.markdown("</div>", unsafe_allow_html=True)
