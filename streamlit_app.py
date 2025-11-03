@@ -703,25 +703,25 @@ def main():
     /* Сделано более компактно: меньший font-size, минимальные отступы и жёсткий max-height */
     #employees_list .streamlit-expanderHeader,
     #employees_list .streamlit-expanderHeader p {
-        font-size: 48px !important; /* уменьшили для компактности */
+        font-size: 40px !important; /* ещё компактнее */
         font-weight: 900 !important; /* жирный текст */
         color: #000000 !important;
         line-height: 1.0 !important;
-        padding: 0 8px !important; /* почти нет вертикального отступа */
+        padding: 0 6px !important; /* минимальные горизонтальные отступы */
         display: flex !important;
         align-items: center !important; /* выровнять по центру по вертикали */
         white-space: nowrap !important; /* одна строка */
         overflow: hidden !important;
         text-overflow: ellipsis !important; /* троеточие при переполнении */
-        max-height: 44px !important; /* ещё меньше высота */
+        max-height: 40px !important; /* ещё более жёсткое ограничение высоты */
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
     }
     /* Адаптивность: на узких экранах уменьшаем размер, чтобы не ломать верстку */
     @media (max-width: 720px) {
         #employees_list .streamlit-expanderHeader,
         #employees_list .streamlit-expanderHeader p {
-            font-size: 26px !important; /* мобильный размер */
-            padding: 8px 10px !important;
+            font-size: 22px !important; /* мобильный размер */
+            padding: 6px 8px !important;
         }
     }
     /* Компактное содержимое раскрытой вкладки сотрудников */
