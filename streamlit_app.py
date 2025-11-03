@@ -702,11 +702,21 @@ def main():
     /* Увеличение шрифта только для списка сотрудников (перекрывает глобальные правила) */
     #employees_list .streamlit-expanderHeader,
     #employees_list .streamlit-expanderHeader p {
-        font-size: 44px !important;
+        /* Увеличенный крупный шрифт для имён сотрудников */
+        font-size: 56px !important;
         font-weight: 900 !important;
         color: #000000 !important;
         line-height: 1.0 !important;
         padding: 12px 16px !important;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+    /* Адаптивность: на узких экранах уменьшаем размер, чтобы не ломать верстку */
+    @media (max-width: 720px) {
+        #employees_list .streamlit-expanderHeader,
+        #employees_list .streamlit-expanderHeader p {
+            font-size: 32px !important;
+            padding: 10px 12px !important;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
