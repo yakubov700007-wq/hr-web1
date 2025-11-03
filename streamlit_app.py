@@ -1256,113 +1256,30 @@ def main():
                 makon, sanai_kabul, vazifa, phone, dog_no, pdf_file, photo_file
             ) = row
             with st.expander(f"{last_name} {first_name} — {rakami_tabel}", expanded=False):
-                cols_top = st.columns([1,2])
-                with cols_top[0]:
-                    # display photo if present
-                    abs_photo = get_abs_path(photo_file)
-                    if photo_file and os.path.isfile(abs_photo):
-                        try:
-                            st.image(Image.open(abs_photo), width=220)
-                        except Exception:
-                            st.info("Нет фото")
-                    else:
-                        st.info("Нет фото")
+                # Оставляем только блок "Информация (только для чтения)" и показываем PDF внутри него
+                st.markdown("**Информация (только для чтения)**")
 
-                    # only admins can upload/replace files
-                    if st.session_state.get("role") == "admin":
-                        up_new_photo = st.file_uploader(f"Заменить фото для {rakami_tabel}", type=["jpg","jpeg","png"], key=f"photo_{emp_id}")
-                        if up_new_photo is not None:
-                            new_path = safe_write_file(PHOTOS_DIR, up_new_photo.name, up_new_photo.getvalue())
-                            update_employee(emp_id, (
-                                rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
-                                pdf_file or "", new_path
-                            ))
-                            st.success("Фото обновлено")
-                            safe_rerun()
+                # Показываем поля как disabled форму (единый вид для всех ролей)
+                employee_form({
+                    "rakami_tabel": rakami_tabel,
+                    "last_name": last_name,
+                    "first_name": first_name,
+                    "nasab": nasab,
+                    "makon": makon,
+                    "sanai_kabul": sanai_kabul,
+                    "vazifa": vazifa,
+                    "phone": phone,
+                    "dog_no": dog_no,
+                    "pdf_file": pdf_file or "",
+                    "photo_file": photo_file or "",
+                }, disabled=True, key_prefix=f"view_{emp_id}")
 
-                        up_new_pdf = st.file_uploader(f"Заменить/добавить PDF для {rakami_tabel}", type=["pdf"], key=f"pdf_{emp_id}")
-                        if up_new_pdf is not None:
-                            new_pdf = safe_write_file(PDFS_DIR, up_new_pdf.name, up_new_pdf.getvalue())
-                            update_employee(emp_id, (
-                                rakami_tabel, last_name, first_name, nasab, makon, sanai_kabul, vazifa, phone, dog_no,
-                                new_pdf, photo_file or ""
-                            ))
-                            st.success("PDF обновлён")
-                            safe_rerun()
-                    else:
-                        st.caption("Только просмотр — загрузка файлов недоступна")
-
-                with cols_top[1]:
-                    st.markdown("**Информация**")
-                    info_cols = st.columns(2)
-                    with info_cols[0]:
-                        st.text(f"Регион: {makon}")
-                        st.text(f"Дата приёма: {sanai_kabul}")
-                        st.text(f"Телефон: {phone}")
-                    with info_cols[1]:
-                        st.text(f"Должность: {vazifa}")
-                        st.text(f"Дог №: {dog_no}")
-                        abs_pdf = get_abs_path(pdf_file)
-                        if pdf_file and os.path.isfile(abs_pdf):
-                            st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
-                        else:
-                            st.caption("PDF не прикреплён")
-
-                    st.divider()
-                    # Edit block: only admins may edit/delete. Viewers see read-only fields.
-                    if st.session_state.get("role") == "admin":
-                        st.markdown("**Редактировать**")
-                        with st.form(f"edit_{emp_id}"):
-                            vals = employee_form({
-                                "rakami_tabel": rakami_tabel,
-                                "last_name": last_name,
-                                "first_name": first_name,
-                                "nasab": nasab,
-                                "makon": makon,
-                                "sanai_kabul": sanai_kabul,
-                                "vazifa": vazifa,
-                                "phone": phone,
-                                "dog_no": dog_no,
-                                "pdf_file": pdf_file or "",
-                                "photo_file": photo_file or "",
-                            }, disabled=False, key_prefix=f"emp_{emp_id}")
-                            save = st.form_submit_button("Сохранить изменения")
-                        cols_btn = st.columns(2)
-                        if save:
-                            new_tabel = vals[0].strip()
-                            if not new_tabel:
-                                st.error("Табельный № обязателен")
-                                st.stop()
-                            if tabel_exists(new_tabel, exclude_id=emp_id):
-                                st.error("Такой Табельный № уже существует")
-                                st.stop()
-                            update_employee(emp_id, (
-                                new_tabel, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9] or "", vals[10] or ""
-                            ))
-                            st.success("Сохранено")
-                            safe_rerun()
-                        with cols_btn[1]:
-                            if st.button("Удалить", type="primary", key=f"del_{emp_id}"):
-                                delete_employee(emp_id)
-                                st.warning("Удалено")
-                                safe_rerun()
-                    else:
-                        st.markdown("**Информация (только для чтения)**")
-                        # render the same fields but disabled so user can view values
-                        employee_form({
-                            "rakami_tabel": rakami_tabel,
-                            "last_name": last_name,
-                            "first_name": first_name,
-                            "nasab": nasab,
-                            "makon": makon,
-                            "sanai_kabul": sanai_kabul,
-                            "vazifa": vazifa,
-                            "phone": phone,
-                            "dog_no": dog_no,
-                            "pdf_file": pdf_file or "",
-                            "photo_file": photo_file or "",
-                        }, disabled=True, key_prefix=f"view_{emp_id}")
-                        st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
+                # PDF: показать кнопку скачивания если есть, иначе пометку
+                abs_pdf = get_abs_path(pdf_file)
+                if pdf_file and os.path.isfile(abs_pdf):
+                    st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
+                else:
+                    st.caption("PDF не прикреплён")
 
         # Закрываем контейнер списка сотрудников
         st.markdown("</div>", unsafe_allow_html=True)
