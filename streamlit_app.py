@@ -724,6 +724,41 @@ def main():
             padding: 10px 12px !important;
         }
     }
+    /* Компактное содержимое раскрытой вкладки сотрудников */
+    #employees_list .streamlit-expanderContent,
+    #employees_list .streamlit-expanderContent > div {
+        padding: 8px 12px !important; /* менее просторно внутри */
+        margin: 0 !important;
+        gap: 6px !important;
+        font-size: 15px !important; /* чуть меньше для деталей */
+        line-height: 1.3 !important;
+    }
+    /* Уменьшаем вертикальные отступы между полями внутри раскрытой панели */
+    #employees_list .streamlit-expanderContent .stTextInput,
+    #employees_list .streamlit-expanderContent .stTextArea,
+    #employees_list .streamlit-expanderContent .stSelectbox,
+    #employees_list .streamlit-expanderContent .stMultiSelect {
+        margin-bottom: 6px !important;
+        padding-bottom: 4px !important;
+    }
+    /* Сужаем изображение превью и контролируем его отступы */
+    #employees_list .streamlit-expanderContent img {
+        max-width: 180px !important;
+        height: auto !important;
+        margin-bottom: 6px !important;
+        border-radius: 6px !important;
+    }
+    /* На узких экранах дополнительно уменьшаем отступы внутри содержимого */
+    @media (max-width: 720px) {
+        #employees_list .streamlit-expanderContent,
+        #employees_list .streamlit-expanderContent > div {
+            padding: 6px 8px !important;
+            font-size: 14px !important;
+        }
+        #employees_list .streamlit-expanderContent img {
+            max-width: 120px !important;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 
