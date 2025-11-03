@@ -702,7 +702,7 @@ def main():
     /* Увеличение шрифта только для списка сотрудников (перекрывает глобальные правила) */
     #employees_list .streamlit-expanderHeader,
     #employees_list .streamlit-expanderHeader p {
-        font-size: 30px !important;
+    font-size: 36px !important;
         font-weight: 900 !important;
         color: #000000 !important;
         line-height: 1.05 !important;
