@@ -1256,43 +1256,92 @@ def main():
                 makon, sanai_kabul, vazifa, phone, dog_no, pdf_file, photo_file
             ) = row
             with st.expander(f"{last_name} {first_name} — {rakami_tabel}", expanded=False):
-                # Оставляем только блок "Информация (только для чтения)" и показываем PDF внутри него
-                st.markdown("**Информация (только для чтения)**")
+                # Admins can edit everything; viewers see read-only info
+                if st.session_state.get("role") == "admin":
+                    st.markdown("**Редактировать сотрудника**")
+                    with st.form(f"edit_employee_{emp_id}"):
+                        vals = employee_form({
+                            "rakami_tabel": rakami_tabel,
+                            "last_name": last_name,
+                            "first_name": first_name,
+                            "nasab": nasab,
+                            "makon": makon,
+                            "sanai_kabul": sanai_kabul,
+                            "vazifa": vazifa,
+                            "phone": phone,
+                            "dog_no": dog_no,
+                            "pdf_file": pdf_file or "",
+                            "photo_file": photo_file or "",
+                        }, disabled=False, key_prefix=f"emp_{emp_id}")
 
-                # Рендерим информацию в двух колонках: фото слева и поля справа (пустая рамка если фото отсутствует)
-                cols_main = st.columns([1, 3])
-                with cols_main[0]:
-                    # Отобразить фото если есть, иначе показать пустую рамку с подписью
-                    abs_photo = get_abs_path(photo_file)
-                    if photo_file and os.path.isfile(abs_photo):
-                        try:
-                            st.image(Image.open(abs_photo), use_column_width=True, caption=None)
-                        except Exception:
+                        uploaded_photo = st.file_uploader("Фото (необязательно)", type=["jpg", "jpeg", "png"], accept_multiple_files=False, key=f"up_photo_{emp_id}")
+                        uploaded_pdf = st.file_uploader("PDF (необязательно)", type=["pdf"], accept_multiple_files=False, key=f"up_pdf_{emp_id}")
+                        save = st.form_submit_button("Сохранить")
+
+                    cols_btn = st.columns(2)
+                    with cols_btn[0]:
+                        if save:
+                            new_tabel = vals[0].strip()
+                            if not new_tabel:
+                                st.error("Табельный № обязателен")
+                            elif tabel_exists(new_tabel, exclude_id=emp_id):
+                                st.error("Такой Табельный № уже существует")
+                            else:
+                                pdf_path = vals[9] or pdf_file or ""
+                                photo_path = vals[10] or photo_file or ""
+                                if uploaded_photo is not None:
+                                    photo_path = safe_write_file(PHOTOS_DIR, uploaded_photo.name, uploaded_photo.getvalue())
+                                if uploaded_pdf is not None:
+                                    pdf_path = safe_write_file(PDFS_DIR, uploaded_pdf.name, uploaded_pdf.getvalue())
+                                update_employee(emp_id, (
+                                    new_tabel, vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], pdf_path or "", photo_path or ""
+                                ))
+                                st.success("Сохранено")
+                                safe_rerun()
+
+                    with cols_btn[1]:
+                        if st.button("Удалить сотрудника", type="primary", key=f"del_emp_{emp_id}"):
+                            delete_employee(emp_id)
+                            st.warning("Сотрудник удалён")
+                            safe_rerun()
+
+                else:
+                    st.markdown("**Информация (только для чтения)**")
+
+                    # Рендерим информацию в двух колонках: фото слева и поля справа (пустая рамка если фото отсутствует)
+                    cols_main = st.columns([1, 3])
+                    with cols_main[0]:
+                        # Отобразить фото если есть, иначе показать пустую рамку с подписью
+                        abs_photo = get_abs_path(photo_file)
+                        if photo_file and os.path.isfile(abs_photo):
+                            try:
+                                st.image(Image.open(abs_photo), use_column_width=True, caption=None)
+                            except Exception:
+                                st.markdown('<div style="width:160px;height:160px;border:2px solid #e53e3e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-weight:600">Нет фото</div>', unsafe_allow_html=True)
+                        else:
+                            # placeholder box with red border (keeps layout)
                             st.markdown('<div style="width:160px;height:160px;border:2px solid #e53e3e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-weight:600">Нет фото</div>', unsafe_allow_html=True)
-                    else:
-                        # placeholder box with red border (keeps layout)
-                        st.markdown('<div style="width:160px;height:160px;border:2px solid #e53e3e;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-weight:600">Нет фото</div>', unsafe_allow_html=True)
 
-                with cols_main[1]:
-                    cols_left = st.columns(2)
-                    with cols_left[0]:
-                        st.text_input("Табельный №", value=rakami_tabel, disabled=True, key=f"view_{emp_id}_rakami_tabel")
-                        st.text_input("Фамилия", value=last_name, disabled=True, key=f"view_{emp_id}_last_name")
-                        st.text_input("Имя", value=first_name, disabled=True, key=f"view_{emp_id}_first_name")
-                        st.text_input("Отчество", value=nasab, disabled=True, key=f"view_{emp_id}_nasab")
-                        st.selectbox("Регион", ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"].index(makon) if makon in ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"] else 0, disabled=True, key=f"view_{emp_id}_makon")
-                        st.text_input("Дата приёма", value=sanai_kabul, disabled=True, key=f"view_{emp_id}_sanai_kabul")
-                    with cols_left[1]:
-                        st.text_input("Должность", value=vazifa, disabled=True, key=f"view_{emp_id}_vazifa")
-                        st.text_input("Телефон", value=phone, disabled=True, key=f"view_{emp_id}_phone")
-                        st.text_input("Дог №", value=dog_no, disabled=True, key=f"view_{emp_id}_dog_no")
+                    with cols_main[1]:
+                        cols_left = st.columns(2)
+                        with cols_left[0]:
+                            st.text_input("Табельный №", value=rakami_tabel, disabled=True, key=f"view_{emp_id}_rakami_tabel")
+                            st.text_input("Фамилия", value=last_name, disabled=True, key=f"view_{emp_id}_last_name")
+                            st.text_input("Имя", value=first_name, disabled=True, key=f"view_{emp_id}_first_name")
+                            st.text_input("Отчество", value=nasab, disabled=True, key=f"view_{emp_id}_nasab")
+                            st.selectbox("Регион", ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"], index=["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"].index(makon) if makon in ["РРП", "ВМКБ", "РУХО", "РУСО", "Душанбе"] else 0, disabled=True, key=f"view_{emp_id}_makon")
+                            st.text_input("Дата приёма", value=sanai_kabul, disabled=True, key=f"view_{emp_id}_sanai_kabul")
+                        with cols_left[1]:
+                            st.text_input("Должность", value=vazifa, disabled=True, key=f"view_{emp_id}_vazifa")
+                            st.text_input("Телефон", value=phone, disabled=True, key=f"view_{emp_id}_phone")
+                            st.text_input("Дог №", value=dog_no, disabled=True, key=f"view_{emp_id}_dog_no")
 
-                    # PDF: показать кнопку скачивания если есть, иначе пометку
-                    abs_pdf = get_abs_path(pdf_file)
-                    if pdf_file and os.path.isfile(abs_pdf):
-                        st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
-                    else:
-                        st.caption("PDF не прикреплён")
+                        # PDF: показать кнопку скачивания если есть, иначе пометку
+                        abs_pdf = get_abs_path(pdf_file)
+                        if pdf_file and os.path.isfile(abs_pdf):
+                            st.download_button("Скачать PDF", data=open(abs_pdf, "rb").read(), file_name=os.path.basename(abs_pdf), key=f"dl_{emp_id}")
+                        else:
+                            st.caption("PDF не прикреплён")
 
         # Закрываем контейнер списка сотрудников
         st.markdown("</div>", unsafe_allow_html=True)
