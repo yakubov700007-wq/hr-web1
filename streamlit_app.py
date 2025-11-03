@@ -698,6 +698,15 @@ def main():
         font-weight: 700 !important;
         color: #000000 !important;
     }
+
+    /* Увеличение шрифта только для списка сотрудников (перекрывает глобальные правила) */
+    #employees_list .streamlit-expanderHeader,
+    #employees_list .streamlit-expanderHeader p {
+        font-size: 30px !important;
+        font-weight: 900 !important;
+        color: #000000 !important;
+        line-height: 1.05 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1185,6 +1194,8 @@ def main():
             safe_rerun()
     else:
         rows = fetch_employees(search=search, region=region)
+        # Ограничиваем увеличение шрифта только для списка сотрудников — оборачиваем в контейнер
+        st.markdown("<div id=\"employees_list\">", unsafe_allow_html=True)
         st.caption(f"Найдено: {len(rows)}")
 
         for row in rows:
@@ -1300,6 +1311,9 @@ def main():
                             "photo_file": photo_file or "",
                         }, disabled=True, key_prefix=f"view_{emp_id}")
                         st.caption("У вас права только для просмотра. Редактирование, удаление и загрузка файлов недоступны.")
+
+        # Закрываем контейнер списка сотрудников
+        st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
