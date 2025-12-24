@@ -203,6 +203,33 @@ def set_new_password(role: str, new_password: str):
     save_password_store(store)
     recompute_pw_fingerprint()
 
+
+def render_change_password_ui(container, prefix="chg"):
+    """Render change-password UI into the given container (st or st.sidebar).
+
+    Uses keys prefixed with `prefix` to avoid collisions.
+    """
+    role_choice = container.selectbox("Кого менять", ("Admin", "Viewer"), key=f"{prefix}_role")
+    old_pwd = container.text_input("Старый пароль", type="password", key=f"{prefix}_old")
+    new1 = container.text_input("Новый пароль", type="password", key=f"{prefix}_new1")
+    new2 = container.text_input("Подтвердите новый пароль", type="password", key=f"{prefix}_new2")
+    if container.button("Сменить пароль", key=f"{prefix}_btn"):
+        role_key = "admin" if role_choice == "Admin" else "viewer"
+        # if env var exists, disallow change via app
+        if (role_key == "admin" and os.getenv("HR_APP_PASSWORD")) or (role_key == "viewer" and os.getenv("HR_VIEWER_PASSWORD")):
+            container.error("Пароль управляется через переменную окружения; удалите её чтобы разрешить смену через приложение.")
+        elif not verify_password(old_pwd, role_key):
+            container.error("Старый пароль неверен")
+        elif not new1 or new1 != new2:
+            container.error("Новые пароли не совпадают")
+        elif len(new1) < 6:
+            container.error("Пароль слишком короткий (минимум 6 символов)")
+        else:
+            set_new_password(role_key, new1)
+            container.success("Пароль успешно изменён. Клиенты будут вынуждены войти заново.")
+            st.session_state.pw_fingerprint = PW_FINGERPRINT
+            safe_rerun()
+
 # --- DB helpers ---
 
 def get_conn():
@@ -908,22 +935,9 @@ def main():
                     del st.session_state[k]
             safe_rerun()
 
-        # Admin-only: password change UI
+        # Admin-only: password change UI (reused component)
         if st.session_state.get("role") == "admin":
-            with st.sidebar.expander("Изменить пароль", expanded=False):
-                role_choice = st.selectbox("Кого менять", ("Admin", "Viewer"), key="chg_role")
-                old_pwd = st.text_input("Старый пароль", type="password", key="chg_old")
-                new1 = st.text_input("Новый пароль", type="password", key="chg_new1")
-                new2 = st.text_input("Подтвердите новый пароль", type="password", key="chg_new2")
-                if st.button("Сменить пароль", key="chg_btn"):
-                    role_key = "admin" if role_choice == "Admin" else "viewer"
-                    # if env var exists, disallow change via app
-                    if (role_key == "admin" and os.getenv("HR_APP_PASSWORD")) or (role_key == "viewer" and os.getenv("HR_VIEWER_PASSWORD")):
-                        st.error("Пароль управляется через переменную окружения; удалите её чтобы разрешить смену через приложение.")
-                    elif not verify_password(old_pwd, role_key):
-                        st.error("Старый пароль неверен")
-                    elif not new1 or new1 != new2:
-                        st.error("Новые пароли не совпадают")
+            render_change_password_ui(st.sidebar, prefix="sidebar_chg")
                     elif len(new1) < 6:
                         st.error("Пароль слишком короткий (минимум 6 символов)")
                     else:
@@ -989,6 +1003,14 @@ def main():
         # Обновить страницу только если была нажата кнопка
         if page_changed:
             safe_rerun()
+
+        # Admin: change-password toggle on main menu
+        if st.session_state.get("role") == "admin":
+            if st.button("Изменить пароль", key="main_chg_toggle"):
+                st.session_state.show_change_password_main = not st.session_state.get("show_change_password_main", False)
+            if st.session_state.get("show_change_password_main"):
+                with st.expander("Изменить пароль", expanded=True):
+                    render_change_password_ui(st, prefix="main_chg")
 
         return
 
