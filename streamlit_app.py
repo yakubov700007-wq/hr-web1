@@ -206,12 +206,18 @@ def set_new_password(role: str, new_password: str):
     recompute_pw_fingerprint()
 
 
-def render_change_password_ui(container, prefix="chg"):
+def render_change_password_ui(container, prefix="chg", current_user_role: str | None = None):
     """Render change-password UI into the given container (st or st.sidebar).
 
     Uses keys prefixed with `prefix` to avoid collisions.
+    If `current_user_role=='viewer'` the widget will only allow changing the viewer password.
     """
-    role_choice = container.selectbox("Кого менять", ("Admin", "Viewer"), key=f"{prefix}_role")
+    # If caller indicates current user is viewer, restrict to Viewer role only
+    if current_user_role == "viewer":
+        role_choice = "Viewer"
+    else:
+        role_choice = container.selectbox("Кого менять", ("Admin", "Viewer"), key=f"{prefix}_role")
+
     old_pwd = container.text_input("Старый пароль", type="password", key=f"{prefix}_old")
     new1 = container.text_input("Новый пароль", type="password", key=f"{prefix}_new1")
     new2 = container.text_input("Подтвердите новый пароль", type="password", key=f"{prefix}_new2")
@@ -937,9 +943,10 @@ def main():
                     del st.session_state[k]
             safe_rerun()
 
-        # Admin-only: password change UI (reused component)
-        if st.session_state.get("role") == "admin":
-            render_change_password_ui(st.sidebar, prefix="sidebar_chg")
+        # Password change UI for admins and viewers (sidebar)
+        if st.session_state.get("role") in ("admin", "viewer"):
+            cur_role = st.session_state.get("role")
+            render_change_password_ui(st.sidebar, prefix="sidebar_chg", current_user_role=cur_role)
     # Navigation with individual buttons in sidebar for instant single-click navigation
     st.sidebar.header("Навигация")
     
@@ -999,13 +1006,13 @@ def main():
         if page_changed:
             safe_rerun()
 
-        # Admin: change-password toggle on main menu
-        if st.session_state.get("role") == "admin":
+        # Change-password toggle on main menu (available to admins and viewers)
+        if st.session_state.get("role") in ("admin", "viewer"):
             if st.button("Изменить пароль", key="main_chg_toggle"):
                 st.session_state.show_change_password_main = not st.session_state.get("show_change_password_main", False)
             if st.session_state.get("show_change_password_main"):
                 with st.expander("Изменить пароль", expanded=True):
-                    render_change_password_ui(st, prefix="main_chg")
+                    render_change_password_ui(st, prefix="main_chg", current_user_role=st.session_state.get("role"))
 
         return
 
