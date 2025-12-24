@@ -938,13 +938,6 @@ def main():
         # Admin-only: password change UI (reused component)
         if st.session_state.get("role") == "admin":
             render_change_password_ui(st.sidebar, prefix="sidebar_chg")
-                    elif len(new1) < 6:
-                        st.error("Пароль слишком короткий (минимум 6 символов)")
-                    else:
-                        set_new_password(role_key, new1)
-                        st.success("Пароль успешно изменён. Клиенты будут вынуждены войти заново.")
-                        st.session_state.pw_fingerprint = PW_FINGERPRINT
-                        safe_rerun()
     # Navigation with individual buttons in sidebar for instant single-click navigation
     st.sidebar.header("Навигация")
     
