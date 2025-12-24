@@ -526,12 +526,12 @@ def station_form(defaults=None, disabled: bool = False, key_prefix: str | None =
 
 
 def main():
+    st.set_page_config(page_title="Сотрудники ПБК", layout="wide")
+
     # Ensure DB and data folders exist before any DB operations
     init_db()
 
     require_auth()
-
-    st.set_page_config(page_title="Сотрудники ПБК", layout="wide")
     
     # Улучшение читаемости текста в формах
     st.markdown("""
