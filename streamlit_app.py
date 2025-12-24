@@ -9,6 +9,7 @@ from io import BytesIO
 import streamlit as st
 from PIL import Image
 import pandas as pd
+import hashlib
 
 # Helper: safe rerun that falls back to st.stop() if experimental_rerun is unavailable
 def safe_rerun():
@@ -99,12 +100,17 @@ def init_db():
 
 # Authentication: two levels
 # Admin password(s) (can add/edit/delete). Supports comma-separated list in env.
-# По умолчанию изменён на 4321 — можно переопределить через секреты/переменные окружения
-ADMIN_PASSWORD = os.getenv("HR_APP_PASSWORD", "4321")
+# Default changed to 917150564pArvinA — can override via secrets/env vars
+ADMIN_PASSWORD = os.getenv("HR_APP_PASSWORD", "917150564pArvinA")
 ADMIN_PASSWORDS = [p.strip() for p in ADMIN_PASSWORD.split(",") if p.strip()]
 # Viewer/read-only password(s). Supports comma-separated list in env.
-VIEWER_PASSWORD = os.getenv("HR_VIEWER_PASSWORD", "123456789")
+VIEWER_PASSWORD = os.getenv("HR_VIEWER_PASSWORD", "917150564")
 VIEWER_PASSWORDS = [p.strip() for p in VIEWER_PASSWORD.split(",") if p.strip()]
+# Fingerprint of current password lists used to invalidate existing sessions when passwords change
+PW_FINGERPRINT = hashlib.sha256(",".join(sorted(ADMIN_PASSWORDS + VIEWER_PASSWORDS)).encode()).hexdigest()
+
+# compute fingerprint from current password lists
+PW_FINGERPRINT = hashlib.sha256(",".join(sorted(ADMIN_PASSWORDS + VIEWER_PASSWORDS)).encode()).hexdigest()
 
 # --- DB helpers ---
 
@@ -412,6 +418,12 @@ def get_abs_path(path_or_rel: str) -> str:
 # --- Auth ---
 
 def require_auth():
+    # if fingerprint changed, clear auth state so users must re-login
+    if st.session_state.get("pw_fingerprint") and st.session_state.get("pw_fingerprint") != PW_FINGERPRINT:
+        for k in ["authed", "role", "page", "pw_fingerprint"]:
+            if k in st.session_state:
+                del st.session_state[k]
+
     """Authenticate user and set role in session_state: 'admin' or 'viewer'."""
     if "authed" not in st.session_state:
         st.session_state.authed = False
@@ -426,11 +438,13 @@ def require_auth():
         if p in ADMIN_PASSWORDS:
             st.session_state.authed = True
             st.session_state.role = "admin"
+            st.session_state.pw_fingerprint = PW_FINGERPRINT
             st.success("Вход выполнен: администратор")
             safe_rerun()
         elif p in VIEWER_PASSWORDS:
             st.session_state.authed = True
             st.session_state.role = "viewer"
+            st.session_state.pw_fingerprint = PW_FINGERPRINT
             st.session_state.page = "Сотрудники"
             st.success("Вход выполнен: только просмотр")
             safe_rerun()
