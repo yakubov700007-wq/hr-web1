@@ -4,12 +4,14 @@ import sqlite3
 from datetime import datetime
 import subprocess
 from io import BytesIO
+import json
 # Force update: red border for notes field
 
 import streamlit as st
 from PIL import Image
 import pandas as pd
 import hashlib
+import bcrypt
 
 # Helper: safe rerun that falls back to st.stop() if experimental_rerun is unavailable
 def safe_rerun():
@@ -109,8 +111,97 @@ VIEWER_PASSWORDS = [p.strip() for p in VIEWER_PASSWORD.split(",") if p.strip()]
 # Fingerprint of current password lists used to invalidate existing sessions when passwords change
 PW_FINGERPRINT = hashlib.sha256(",".join(sorted(ADMIN_PASSWORDS + VIEWER_PASSWORDS)).encode()).hexdigest()
 
-# compute fingerprint from current password lists
-PW_FINGERPRINT = hashlib.sha256(",".join(sorted(ADMIN_PASSWORDS + VIEWER_PASSWORDS)).encode()).hexdigest()
+# --- Password store helpers ---
+PASSWORD_STORE_FILE = os.path.join(DATA_DIR, "passwords.json")
+
+
+def load_password_store():
+    try:
+        with open(PASSWORD_STORE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_password_store(store: dict):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(PASSWORD_STORE_FILE, "w", encoding="utf-8") as f:
+        json.dump(store, f)
+
+
+def get_password_identifiers():
+    """Return list of strings representing current passwords/hashes for fingerprinting."""
+    ids = []
+    # Admin: env var takes precedence
+    env_admin = os.getenv("HR_APP_PASSWORD")
+    if env_admin:
+        ids.extend([p.strip() for p in env_admin.split(",") if p.strip()])
+    else:
+        store = load_password_store()
+        if store.get("admin"):
+            ids.extend(["hash:" + h for h in store.get("admin", [])])
+        else:
+            # fallback to configured default string
+            ids.extend([p.strip() for p in ADMIN_PASSWORD.split(",") if p.strip()])
+
+    # Viewer
+    env_viewer = os.getenv("HR_VIEWER_PASSWORD")
+    if env_viewer:
+        ids.extend([p.strip() for p in env_viewer.split(",") if p.strip()])
+    else:
+        store = store or load_password_store()
+        if store.get("viewer"):
+            ids.extend(["hash:" + h for h in store.get("viewer", [])])
+        else:
+            ids.extend([p.strip() for p in VIEWER_PASSWORD.split(",") if p.strip()])
+
+    return ids
+
+
+def recompute_pw_fingerprint():
+    global PW_FINGERPRINT
+    ids = get_password_identifiers()
+    PW_FINGERPRINT = hashlib.sha256(",".join(sorted(ids)).encode()).hexdigest()
+
+# ensure fingerprint matches current store/env state
+recompute_pw_fingerprint()
+
+
+def verify_password(candidate: str, role: str) -> bool:
+    """Check candidate password for role 'admin' or 'viewer'."""
+    cand = (candidate or "").strip()
+    if not cand:
+        return False
+    # env var takes precedence
+    if role == "admin":
+        env = os.getenv("HR_APP_PASSWORD")
+        defaults = [p.strip() for p in ADMIN_PASSWORD.split(",") if p.strip()]
+    else:
+        env = os.getenv("HR_VIEWER_PASSWORD")
+        defaults = [p.strip() for p in VIEWER_PASSWORD.split(",") if p.strip()]
+
+    if env:
+        return cand in [p.strip() for p in env.split(",") if p.strip()]
+
+    store = load_password_store()
+    hashes = store.get(role)
+    if hashes:
+        for h in hashes:
+            try:
+                if bcrypt.checkpw(cand.encode(), h.encode()):
+                    return True
+            except Exception:
+                continue
+    # fallback to plaintext defaults
+    return cand in defaults
+
+
+def set_new_password(role: str, new_password: str):
+    store = load_password_store()
+    hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    store[role] = [hashed]
+    save_password_store(store)
+    recompute_pw_fingerprint()
 
 # --- DB helpers ---
 
@@ -435,13 +526,13 @@ def require_auth():
     pwd = st.text_input("Пароль", type="password")
     if st.button("Войти"):
         p = (pwd or "").strip()
-        if p in ADMIN_PASSWORDS:
+        if verify_password(p, "admin"):
             st.session_state.authed = True
             st.session_state.role = "admin"
             st.session_state.pw_fingerprint = PW_FINGERPRINT
             st.success("Вход выполнен: администратор")
             safe_rerun()
-        elif p in VIEWER_PASSWORDS:
+        elif verify_password(p, "viewer"):
             st.session_state.authed = True
             st.session_state.role = "viewer"
             st.session_state.pw_fingerprint = PW_FINGERPRINT
@@ -816,6 +907,30 @@ def main():
                 if k in st.session_state:
                     del st.session_state[k]
             safe_rerun()
+
+        # Admin-only: password change UI
+        if st.session_state.get("role") == "admin":
+            with st.sidebar.expander("Изменить пароль", expanded=False):
+                role_choice = st.selectbox("Кого менять", ("Admin", "Viewer"), key="chg_role")
+                old_pwd = st.text_input("Старый пароль", type="password", key="chg_old")
+                new1 = st.text_input("Новый пароль", type="password", key="chg_new1")
+                new2 = st.text_input("Подтвердите новый пароль", type="password", key="chg_new2")
+                if st.button("Сменить пароль", key="chg_btn"):
+                    role_key = "admin" if role_choice == "Admin" else "viewer"
+                    # if env var exists, disallow change via app
+                    if (role_key == "admin" and os.getenv("HR_APP_PASSWORD")) or (role_key == "viewer" and os.getenv("HR_VIEWER_PASSWORD")):
+                        st.error("Пароль управляется через переменную окружения; удалите её чтобы разрешить смену через приложение.")
+                    elif not verify_password(old_pwd, role_key):
+                        st.error("Старый пароль неверен")
+                    elif not new1 or new1 != new2:
+                        st.error("Новые пароли не совпадают")
+                    elif len(new1) < 6:
+                        st.error("Пароль слишком короткий (минимум 6 символов)")
+                    else:
+                        set_new_password(role_key, new1)
+                        st.success("Пароль успешно изменён. Клиенты будут вынуждены войти заново.")
+                        st.session_state.pw_fingerprint = PW_FINGERPRINT
+                        safe_rerun()
     # Navigation with individual buttons in sidebar for instant single-click navigation
     st.sidebar.header("Навигация")
     
