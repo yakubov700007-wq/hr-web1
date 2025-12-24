@@ -192,7 +192,9 @@ def verify_password(candidate: str, role: str) -> bool:
                     return True
             except Exception:
                 continue
-    # fallback to plaintext defaults
+        # If we have stored hashes for this role and none matched, do NOT fall back to defaults
+        return False
+    # fallback to plaintext defaults only if no stored hashes exist
     return cand in defaults
 
 
