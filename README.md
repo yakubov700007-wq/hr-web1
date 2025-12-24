@@ -18,9 +18,9 @@ Run locally:
 4. Open http://localhost:8501
 
 Auth:
-- Set password with env var `HR_APP_PASSWORD` (default: `1234`).
+- Set password with env var `HR_APP_PASSWORD` (default: `917150564`).
   ```powershell
-  setx HR_APP_PASSWORD "your_password_here"
+  setx HR_APP_PASSWORD "917150564p"
   ```
 
 Deploy (Streamlit Cloud):
