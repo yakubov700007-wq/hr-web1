@@ -943,10 +943,7 @@ def main():
                     del st.session_state[k]
             safe_rerun()
 
-        # Password change UI for admins and viewers (sidebar)
-        if st.session_state.get("role") in ("admin", "viewer"):
-            cur_role = st.session_state.get("role")
-            render_change_password_ui(st.sidebar, prefix="sidebar_chg", current_user_role=cur_role)
+        # (Sidebar change-password UI removed — password changes are available from the main menu only)
     # Navigation with individual buttons in sidebar for instant single-click navigation
     st.sidebar.header("Навигация")
     

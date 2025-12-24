@@ -27,7 +27,7 @@ Auth:
   setx HR_VIEWER_PASSWORD "917150564"
   ```
 
-- You can also change passwords **in-app** (admin only): open the sidebar while logged in as admin → "Изменить пароль". Note: if an env var is set for a role, it overrides in-app changes.
+- You can also change passwords **in-app** from the **Главная** page: log in as Admin or Viewer, go to the main menu and click **Изменить пароль**. Note: if an env var is set for a role, it overrides in-app changes.
 
 Deploy (Streamlit Cloud):
 - Push this folder to GitHub.
