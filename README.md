@@ -18,10 +18,16 @@ Run locally:
 4. Open http://localhost:8501
 
 Auth:
-- Set password with env var `HR_APP_PASSWORD` (default: `917150564`).
+- Set admin password with env var `HR_APP_PASSWORD` (default: `917150564pArvinA`).
   ```powershell
-  setx HR_APP_PASSWORD "917150564p"
+  setx HR_APP_PASSWORD "917150564pArvinA"
   ```
+- Set viewer password with env var `HR_VIEWER_PASSWORD` (default: `917150564`).
+  ```powershell
+  setx HR_VIEWER_PASSWORD "917150564"
+  ```
+
+- You can also change passwords **in-app** (admin only): open the sidebar while logged in as admin → "Изменить пароль". Note: if an env var is set for a role, it overrides in-app changes.
 
 Deploy (Streamlit Cloud):
 - Push this folder to GitHub.
